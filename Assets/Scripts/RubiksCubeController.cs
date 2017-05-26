@@ -17,6 +17,8 @@ class RotatePattern {
 }
 
 public class RubiksCubeController : MonoBehaviour {
+	public AudioClip ClearAudio;
+
     // 中心キューブ
 	private Transform Core_;
     // 3x3x3 ピース配列
@@ -58,6 +60,11 @@ public class RubiksCubeController : MonoBehaviour {
 
 	// 反転
 	private bool IsReversing_ = false;
+
+	// Use this for initialization
+	void Start () {
+		rebuildPieces();
+	}
 
     private int[] locatePiece(Transform o, float threashold = 0.3f) {
 		int[] r = new int[3];
@@ -192,6 +199,13 @@ public class RubiksCubeController : MonoBehaviour {
 		UpdateInsideCubes ();
     }
 
+	public static Vector3 RotateAroundPoint(Vector3 point, Vector3 pivot, Quaternion angle) {
+		var finalPos = point - pivot;
+		finalPos = angle * finalPos;
+		finalPos += pivot;
+		return finalPos;
+	}
+
 	private void UpdateInsideCubes() {
 		var surfaces = GameObject.FindGameObjectsWithTag ("Surface Cube");
 		//Debug.LogFormat ("updateInsideCubes: surfaces={0}", surfaces.Length);
@@ -204,16 +218,26 @@ public class RubiksCubeController : MonoBehaviour {
 		}
 	}
 
-	// Use this for initialization
-	void Start () {
-        rebuildPieces();
-	}
+	private void CheckClear() {
+		var surfaces = GameObject.FindGameObjectsWithTag ("Surface Cube");
 
-	public static Vector3 RotateAroundPoint(Vector3 point, Vector3 pivot, Quaternion angle) {
-		var finalPos = point - pivot;
-		finalPos = angle * finalPos;
-		finalPos += pivot;
-		return finalPos;
+		// 全表面の奥キューブが初期状態のものと一致すればクリア
+		foreach (var s in surfaces) {
+			var pc = s.GetComponent<PieceController> ();
+			if (pc != null) {
+				if (!pc.HasInitInside ()) {
+					return;
+				}
+			}
+		}
+
+		Debug.Log ("Cleared!!!!!");
+		if (ClearAudio != null) {
+			var audioSource = gameObject.GetComponent<AudioSource> ();
+			audioSource.clip = ClearAudio;
+			audioSource.Play ();
+		}
+
 	}
 
 	private void FireRotate(int filterX, int filterY, int filterZ, bool direction) {
@@ -325,13 +349,20 @@ public class RubiksCubeController : MonoBehaviour {
 
             TotalRotate_ += Mathf.Abs(deltaAngle);
             if (TotalRotate_ >= 90.0f) {
+				// 回転完了
                 //Debug.Log("rotate complete.");
                 IsRotation_ = false;
 
+				// キューブ情報組み直し
                 rebuildPieces();
 
-				// シャッフル中だったら回数デクリメント
-				ShuffleCount_ = ShuffleCount_ > 0 ? ShuffleCount_ - 1 : 0;
+				if (ShuffleCount_ > 0) {
+					// シャッフル中だったら回数デクリメント
+					ShuffleCount_ = ShuffleCount_ > 0 ? ShuffleCount_ - 1 : 0;
+				} else {
+					// クリアかチェック
+					CheckClear ();
+				}
             }
         }
 
@@ -469,20 +500,19 @@ public class RubiksCubeController : MonoBehaviour {
 					names += ", " + t.name;
 				}
 			}
-			Debug.LogFormat ("DetectSurface : Cubes=[{0}]", names);
-
+			//Debug.LogFormat ("DetectSurface : Cubes=[{0}]", names);
 		}
 
 		int[,] filterParams = {
-            {0, -1, -1 },
-			{1, -1, -1 },
-            {2, -1, -1 },
-            {-1, 0, -1 },
-			{-1, 1, -1 },
-            {-1, 2, -1 },
-            {-1, -1, 0 },
-			{-1, -1, 1 },
-            {-1, -1, 2 },
+            { 0, -1, -1 },
+			{ 1, -1, -1 },
+            { 2, -1, -1 },
+            {-1,  0, -1 },
+			{-1,  1, -1 },
+            {-1,  2, -1 },
+            {-1, -1,  0 },
+			{-1, -1,  1 },
+            {-1, -1,  2 },
         };
 
         int[] surface = null;
