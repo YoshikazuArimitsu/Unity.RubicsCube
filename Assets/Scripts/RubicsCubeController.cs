@@ -26,14 +26,20 @@ public class RubicsCubeController : MonoBehaviour {
     private RotatePattern[] RotatePatterns_ = new RotatePattern[] {
         new RotatePattern(0, -1, -1, true),
         new RotatePattern(0, -1, -1, false),
+		new RotatePattern(1, -1, -1, true),
+		new RotatePattern(1, -1, -1, false),
         new RotatePattern(2, -1, -1, true),
         new RotatePattern(2, -1, -1, false),
         new RotatePattern(-1, 0, -1, true),
         new RotatePattern(-1, 0, -1, false),
+		new RotatePattern(-1, 1, -1, true),
+		new RotatePattern(-1, 1, -1, false),
         new RotatePattern(-1, 2, -1, true),
         new RotatePattern(-1, 2, -1, false),
         new RotatePattern(-1, -1, 0, true),
         new RotatePattern(-1, -1, 0, false),
+		new RotatePattern(-1, -1, 1, true),
+		new RotatePattern(-1, -1, 1, false),
         new RotatePattern(-1, -1, 2, true),
         new RotatePattern(-1, -1, 2, false),
     };
@@ -97,6 +103,42 @@ public class RubicsCubeController : MonoBehaviour {
 			}
 		}
 		return null;
+	}
+
+	private Transform lookupRotateCenter(Transform[] transforms) {
+		foreach (var t in transforms) {
+			if (t == Core_) {
+				return t;
+			}
+		}
+		return lookupCenter(transforms);
+	}
+
+	private Vector3 rotateAxis(Transform[] transforms) {
+		var center = lookupRotateCenter(RotateTransforms_);
+
+		// 中心を含まない場合、キューブ中心から回転面中央キューブへのベクトルが回転軸となる
+		if (center != Core_) {
+			return center.transform.position - Core_.transform.position;
+		}
+
+		// 中心を含む場合、transforms に含まれない 回転面中央キューブ(2) のうち大きいものへのベクトルを取る
+		Transform[] targets = new Transform[] {
+			Pieces_ [2, 1, 1],
+			Pieces_ [1, 2, 1],
+			Pieces_ [1, 1, 2]
+		};
+
+		foreach (var target in targets) {
+			var c = ContainsAll (transforms, new Transform[] { target });
+
+			if (c == false) {
+				return target.transform.position - Core_.transform.position;
+			}
+		}
+
+		Debug.Log ("Can't find rotateAxis!!");
+		return Vector3.zero;
 	}
 
     private void rebuildPieces() {
@@ -176,8 +218,8 @@ public class RubicsCubeController : MonoBehaviour {
 
 	private void FireRotate(int filterX, int filterY, int filterZ, bool direction) {
 		RotateTransforms_ = filterPiece(filterX, filterY, filterZ);
-		RotateCenter_ = lookupCenter(RotateTransforms_);
-		RotateAxis_ = RotateCenter_.transform.position - Core_.transform.position;
+		RotateCenter_ = lookupRotateCenter (RotateTransforms_);
+		RotateAxis_ = rotateAxis (RotateTransforms_);
 		RotateDirection_ = direction;
 		TotalRotate_ = 0.0f;
 		IsRotation_ = true;
@@ -188,8 +230,8 @@ public class RubicsCubeController : MonoBehaviour {
 
 	private void FireRotateBy2Cube(int filterX, int filterY, int filterZ, Transform from, Transform to) {
 		RotateTransforms_ = filterPiece(filterX, filterY, filterZ);
-		RotateCenter_ = lookupCenter(RotateTransforms_);
-		RotateAxis_ = RotateCenter_.transform.position - Core_.transform.position;
+		RotateCenter_ = lookupRotateCenter (RotateTransforms_);
+		RotateAxis_ = rotateAxis (RotateTransforms_);
 
 		TotalRotate_ = 0.0f;
 		IsRotation_ = true;
@@ -218,7 +260,7 @@ public class RubicsCubeController : MonoBehaviour {
 	void Update () {
         // 回転トリガー
         if (!IsRotation_) {
-			// キーボード回転機能 0〜9,A,B
+			// キーボード回転機能 0〜9,A〜H
             KeyCode[] keyCodes = new KeyCode[] {
                 KeyCode.Alpha0,
                 KeyCode.Alpha1,
@@ -231,7 +273,13 @@ public class RubicsCubeController : MonoBehaviour {
                 KeyCode.Alpha8,
                 KeyCode.Alpha9,
                 KeyCode.A,
-                KeyCode.B
+                KeyCode.B,
+				KeyCode.C,
+				KeyCode.D,
+				KeyCode.E,
+				KeyCode.F,
+				KeyCode.G,
+				KeyCode.H
             };
 
             for(int i = 0; i < keyCodes.Length; ++i) {
@@ -250,7 +298,7 @@ public class RubicsCubeController : MonoBehaviour {
 
 			// シャッフル
 			if (Input.GetKey (KeyCode.S)) {
-				ShuffleCount_ = 100;
+				ShuffleCount_ = 200;
 			}
         }
 
@@ -259,8 +307,8 @@ public class RubicsCubeController : MonoBehaviour {
 			// 基本回転速度
 			float rotateSpeed = 3.0f;
 
-			// シャッフル中なら回転速度10倍
-			rotateSpeed = (ShuffleCount_ > 0) ? rotateSpeed * 5 : rotateSpeed;
+			// シャッフル中なら回転速度8倍
+			rotateSpeed = (ShuffleCount_ > 0) ? rotateSpeed * 8 : rotateSpeed;
 
             float rotate = rotateSpeed * (RotateDirection_ ? 90.0f : -90.0f);
             float deltaAngle = rotate * Time.deltaTime;
@@ -394,7 +442,7 @@ public class RubicsCubeController : MonoBehaviour {
 	/// <returns><c>true</c>, if all was containsed, <c>false</c> otherwise.</returns>
 	/// <param name="arrays">Arrays.</param>
 	/// <param name="targets">Targets.</param>
-    private bool ContainsAll(Transform[] arrays, Transform[] targets) {
+    private static bool ContainsAll(Transform[] arrays, Transform[] targets) {
         foreach(var t in targets) {
             bool contain = false;
             foreach(var a in arrays) {
@@ -427,19 +475,19 @@ public class RubicsCubeController : MonoBehaviour {
 
 		int[,] filterParams = {
             {0, -1, -1 },
-			//{1, -1, -1 },
+			{1, -1, -1 },
             {2, -1, -1 },
             {-1, 0, -1 },
-			//{-1, 1, -1 },
+			{-1, 1, -1 },
             {-1, 2, -1 },
             {-1, -1, 0 },
-			//{-1, -1, 1 },
+			{-1, -1, 1 },
             {-1, -1, 2 },
         };
 
         int[] surface = null;
 
-        for(int i = 0; i < 6 ; i++) {
+        for(int i = 0; i < 9 ; i++) {
             var s = filterPiece(filterParams[i, 0], filterParams[i, 1], filterParams[i, 2]);
 
             if(ContainsAll(s, transforms.ToArray())) {

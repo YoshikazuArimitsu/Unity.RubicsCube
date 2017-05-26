@@ -38,11 +38,13 @@ public class PieceController : MonoBehaviour {
 			newInside = hit.collider.GetComponent<Transform> ();
 		}
 
+		/*
 		if (newInside != InsideCube_) {
 			Debug.LogFormat ("{0}-{1} Update InsideCube={2}",
 				BaseCube_.name, name,
 				newInside != null ? newInside.name : "null");
 		}
+		*/
 		InsideCube_ = newInside;
 	}
 
