@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class PieceController : MonoBehaviour {
     private Transform BaseCube_;
-    private RubicsCubeController RubicsCubeController_;
+    private RubiksCubeController RubicsCubeController_;
 	private Transform InsideCube_;
 
     /*
@@ -16,7 +16,7 @@ public class PieceController : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
         BaseCube_ = transform.parent;
-        RubicsCubeController_ = BaseCube_.parent.GetComponent<RubicsCubeController>();
+		RubicsCubeController_ = BaseCube_.parent.GetComponent<RubiksCubeController>();
 
 	}
 	

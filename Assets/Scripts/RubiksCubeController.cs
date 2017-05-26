@@ -16,7 +16,7 @@ class RotatePattern {
     }
 }
 
-public class RubicsCubeController : MonoBehaviour {
+public class RubiksCubeController : MonoBehaviour {
     // 中心キューブ
 	private Transform Core_;
     // 3x3x3 ピース配列
@@ -194,7 +194,7 @@ public class RubicsCubeController : MonoBehaviour {
 
 	private void UpdateInsideCubes() {
 		var surfaces = GameObject.FindGameObjectsWithTag ("Surface Cube");
-		Debug.LogFormat ("updateInsideCubes: surfaces={0}", surfaces.Length);
+		//Debug.LogFormat ("updateInsideCubes: surfaces={0}", surfaces.Length);
 
 		foreach (var s in surfaces) {
 			var pc = s.GetComponent<PieceController> ();
@@ -325,7 +325,7 @@ public class RubicsCubeController : MonoBehaviour {
 
             TotalRotate_ += Mathf.Abs(deltaAngle);
             if (TotalRotate_ >= 90.0f) {
-                Debug.Log("rotate complete.");
+                //Debug.Log("rotate complete.");
                 IsRotation_ = false;
 
                 rebuildPieces();
@@ -351,7 +351,7 @@ public class RubicsCubeController : MonoBehaviour {
 
 			TotalRotateReverse_ += Mathf.Abs(deltaAngle);
 			if (TotalRotateReverse_ >= 180.0f) {
-				Debug.Log ("reverse complete.");
+				//Debug.Log ("reverse complete.");
 				IsReversing_ = false;
 			}
 		}
