@@ -190,4 +190,12 @@ public class RubicsCubeController : MonoBehaviour {
             }
         }
     }
+
+    public bool IsEnablePieceDrag() {
+        // 回転中なら拒否
+        if(IsRotation_) {
+            return false;
+        }
+        return true;
+    }
 }
