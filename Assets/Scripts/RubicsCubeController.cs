@@ -84,20 +84,23 @@ public class RubicsCubeController : MonoBehaviour {
     }
 
     private void rebuildPieces() {
-        var pieces = new Transform[3, 3, 3]; ;
+        var pieces = new Transform[3, 3, 3];
         // Core
         Core_ = transform.Find("Core");
         pieces[1, 1, 1] = Core_;
-        Debug.LogFormat("Core : {0} -> (1, 1, 1)", Core_.transform.localPosition);
+        //Debug.LogFormat("Core : {0} -> (1, 1, 1)", Core_.transform.localPosition);
 
         // Centers
         for (int i = 1; i <= 6; i++) {
             var t = transform.Find("Center Piece " + i);
             var l = locatePiece(t);
             pieces[l[0], l[1], l[2]] = t;
+
+			/*
             Debug.LogFormat("Center : {0} -> ({1}, {2}, {3})",
                 t.transform.localPosition,
                 l[0], l[1], l[2]);
+                */
         }
 
         // Corners
@@ -105,9 +108,12 @@ public class RubicsCubeController : MonoBehaviour {
             var t = transform.Find("Corner Piece " + i);
             var l = locatePiece(t);
             pieces[l[0], l[1], l[2]] = t;
+
+			/*
             Debug.LogFormat("Corner : {0} -> ({1}, {2}, {3})",
                 t.transform.localPosition,
                 l[0], l[1], l[2]);
+                */
         }
 
         // Centers
@@ -115,17 +121,46 @@ public class RubicsCubeController : MonoBehaviour {
             var t = transform.Find("Edge Piece " + i);
             var l = locatePiece(t);
             pieces[l[0], l[1], l[2]] = t;
+
+			/*
             Debug.LogFormat("Edge : {0} -> ({1}, {2}, {3})",
                 t.transform.localPosition,
                 l[0], l[1], l[2]);
+            */
         }
 
         Pieces_ = pieces;
+
+		UpdateInsideCubes ();
     }
+
+	private void UpdateInsideCubes() {
+		var surfaces = GameObject.FindGameObjectsWithTag ("Surface Cube");
+		Debug.LogFormat ("updateInsideCubes: surfaces={0}", surfaces.Length);
+
+		foreach (var s in surfaces) {
+			var pc = s.GetComponent<PieceController> ();
+			if (pc != null) {
+				pc.UpdateInsideCube ();
+			}
+		}
+	}
 
 	// Use this for initialization
 	void Start () {
         rebuildPieces();
+	}
+
+	private void FireRotate(int filterX, int filterY, int filterZ, bool direction) {
+		RotateTransforms_ = filterPiece(filterX, filterY, filterZ);
+		RotateDirection_ = direction;
+		RotateCenter_ = lookupCenter(RotateTransforms_);
+		RotateAxis_ = RotateCenter_.transform.position - Core_.transform.position;
+		TotalRotate_ = 0.0f;
+		IsRotation_ = true;
+
+		Debug.LogFormat("Fire Rotation : (x/y/z)=({0}, {1}, {2}), dir={3}",
+			filterX, filterY, filterZ, direction);
 	}
 	
 	// Update is called once per frame
@@ -152,15 +187,7 @@ public class RubicsCubeController : MonoBehaviour {
             for(int i = 0; i < keyCodes.Length; ++i) {
                 if(Input.GetKey(keyCodes[i])) {
                     var r = RotatePatterns_[i];
-                    RotateTransforms_ = filterPiece(r.FilterX, r.FilterY, r.FilterZ);
-                    RotateDirection_ = r.Direction;
-                    RotateCenter_ = lookupCenter(RotateTransforms_);
-                    RotateAxis_ = RotateCenter_.transform.position - Core_.transform.position;
-                    TotalRotate_ = 0.0f;
-                    IsRotation_ = true;
-
-                    Debug.LogFormat("Trigger Rotation : (x/y/z)=({0}, {1}, {2}), dir={3}",
-                        r.FilterX, r.FilterY, r.FilterZ, r.Direction);
+					FireRotate (r.FilterX, r.FilterY, r.FilterZ, r.Direction);
                     break;
                 }
             }
@@ -175,7 +202,7 @@ public class RubicsCubeController : MonoBehaviour {
                 float a = 90.0f - TotalRotate_;
                 deltaAngle = (deltaAngle > 0.0f) ? a : -a;
             }
-            Debug.LogFormat("Do Rotation : delta={0}, total={1}", deltaAngle, TotalRotate_);
+            //Debug.LogFormat("Do Rotation : delta={0}, total={1}", deltaAngle, TotalRotate_);
 
             foreach (var t in RotateTransforms_) {
                 t.RotateAround(RotateCenter_.transform.position, RotateAxis_, deltaAngle);
@@ -183,7 +210,7 @@ public class RubicsCubeController : MonoBehaviour {
 
             TotalRotate_ += Mathf.Abs(deltaAngle);
             if (TotalRotate_ >= 90.0f) {
-                Debug.Log("Do Rotation : 90deg rotate complete.");
+                Debug.Log("rotate complete.");
                 IsRotation_ = false;
 
                 rebuildPieces();
@@ -212,33 +239,55 @@ public class RubicsCubeController : MonoBehaviour {
         return true;
     }
 
-    private List<Transform> DragCubes_ = new List<Transform>();
+	private Transform DragOrigin_;
+	private Transform DragOriginInside_;
 
     public void OnDragCancel() {
-        DragCubes_.Clear();
+		DragOrigin_ = null;
+		DragOriginInside_ = null;
     }
 
-    public void OnDragStart(Transform t) {
-        DragCubes_.Clear();
-        DragCubes_.Add(t);
+	public void OnDragStart(Transform drag, Transform inside) {
+		DragOrigin_ = drag;
+		DragOriginInside_ = inside;
+
+		Debug.LogFormat("OnDragStart : Cubes=[{0}, {1}]",
+			DragOrigin_.name, DragOriginInside_.name);
+
     }
 
-    public void OnDragOver(Transform t) {
+	public void OnDragOver(Transform drag, Transform inside) {
         // 無効
-        if(DragCubes_.Count == 0 || DragCubes_.Contains(t) || !IsEnablePieceDrag()) { 
+		if(DragOrigin_ == null || !IsEnablePieceDrag()) { 
             return;
         }
 
-        DragCubes_.Add(t);
-        // ドラッグで通過したキューブを含む平面が一つに特定できるか？
-        var surface = detectSurface(DragCubes_);
+		// 無移動
+		if (DragOrigin_ == drag && DragOriginInside_ == inside) {
+			return;
+		}
+
+		// ドラッグで通過したキューブを含む平面が一つに特定できるか？
+		List<Transform> cubes = new List<Transform> () {
+			DragOrigin_, DragOriginInside_
+		};
+		if (!cubes.Contains (drag)) {
+			cubes.Add (drag);
+		}
+		if (!cubes.Contains (inside)) {
+			cubes.Add (inside);
+		}
+
+		var surface = detectSurface(cubes);
         if(surface == null) {
             // 一つに特定できない
             return;
         }
 
         Debug.Log("Fire Rotate!");
-        DragCubes_.Clear();
+
+		DragOrigin_ = null;
+		DragOriginInside_ = null;
         /*
         var from = DragFrom_;
         var to = t;
@@ -247,6 +296,13 @@ public class RubicsCubeController : MonoBehaviour {
         */
     }
 
+	/// <summary>
+	/// Containses all.
+	/// Arraysの配列がtargetsの配列の内容を全て含むか
+	/// </summary>
+	/// <returns><c>true</c>, if all was containsed, <c>false</c> otherwise.</returns>
+	/// <param name="arrays">Arrays.</param>
+	/// <param name="targets">Targets.</param>
     private bool ContainsAll(Transform[] arrays, Transform[] targets) {
         foreach(var t in targets) {
             bool contain = false;
@@ -264,42 +320,47 @@ public class RubicsCubeController : MonoBehaviour {
         return true;
     }
 
-    private Transform[] detectSurface(List<Transform> transforms) {
+	private int[] detectSurface(List<Transform> transforms) {
+		{
+			string names = "";
+			foreach (var t in transforms) {
+				if (string.IsNullOrEmpty (names)) {
+					names = t.name;
+				} else {
+					names += ", " + t.name;
+				}
+			}
+			Debug.LogFormat ("DetectSurface : Cubes=[{0}]", names);
 
-        string names = "";
-        foreach(var t in transforms) {
-            if(string.IsNullOrEmpty(names)) {
-                names = t.name;
-            } else {
-                names += ", " + t.name;
-            }
-        }
-        Debug.LogFormat("DetectSurface : Cubes=[{0}]", names);
+		}
 
-        int[,] filterParams = {
+		int[,] filterParams = {
             {0, -1, -1 },
+			{1, -1, -1 },
             {2, -1, -1 },
             {-1, 0, -1 },
+			{-1, 1, -1 },
             {-1, 2, -1 },
             {-1, -1, 0 },
+			{-1, -1, 1 },
             {-1, -1, 2 },
         };
 
-        Transform[] surface = null;
+        int[] surface = null;
 
-        for(int i = 0; i < 6 ; i++) {
+        for(int i = 0; i < 9 ; i++) {
             var s = filterPiece(filterParams[i, 0], filterParams[i, 1], filterParams[i, 2]);
 
             if(ContainsAll(s, transforms.ToArray())) {
                 if(surface != null) {
-                    Debug.Log("Matched multiple surface");
                     return null;
                 }
 
                 Debug.LogFormat("DetectSurface : Found ({0}, {1}, {2})",
                     filterParams[i, 0], filterParams[i, 1], filterParams[i, 2]);
-
-                surface = s;
+				surface = new int[] {
+					filterParams [i, 0], filterParams [i, 1], filterParams [i, 2]
+				};
             }
         }
         return surface;
