@@ -6,9 +6,11 @@ public class PieceController : MonoBehaviour {
     private Transform BaseCube_;
     private RubicsCubeController RubicsCubeController_;
 
+    /*
     private bool RaisedFlick_ = false;
     private Vector3 MouseDownPosition_;
     public int FlickThreshold = 20;
+    */
 
 	// Use this for initialization
 	void Start () {
@@ -25,13 +27,29 @@ public class PieceController : MonoBehaviour {
 		
 	}
 
+    void OnMouseUp() {
+        RubicsCubeController_.OnDragCancel();
+    }
+
     void OnMouseDown() {
-        Debug.LogFormat("OnMouseDown on {0} : {1}", BaseCube_.name, Input.mousePosition);
+        RubicsCubeController_.OnDragStart(BaseCube_);
+        /*
         RaisedFlick_ = false;
         MouseDownPosition_ = Input.mousePosition;
+
+        {
+            Vector3 loc = RubicsCubeController_.GetPieceLocation(BaseCube_);
+            Debug.LogFormat("OnMouseDown on {0} : {1}", BaseCube_.name, loc);
+        }
+        */
+    }
+
+    void OnMouseOver() {
+        RubicsCubeController_.OnDragOver(BaseCube_);
     }
 
     void OnMouseDrag() {
+        /*
         if(!RubicsCubeController_.IsEnablePieceDrag()) {
             return;
         }
@@ -58,5 +76,6 @@ public class PieceController : MonoBehaviour {
                 RaisedFlick_ = true;
             }
         }
+        */
     }
 }

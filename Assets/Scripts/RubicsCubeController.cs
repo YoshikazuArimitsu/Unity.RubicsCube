@@ -191,6 +191,19 @@ public class RubicsCubeController : MonoBehaviour {
         }
     }
 
+    public Vector3 GetPieceLocation(Transform t) {
+        for (int _x = 0; _x < 3; _x++) {
+            for (int _y = 0; _y < 3; _y++) {
+                for (int _z = 0; _z < 3; _z++) {
+                    if(Pieces_[_x, _y, _z] == t) {
+                        return new Vector3(_x, _y, _z);
+                    }
+                }
+            }
+        }
+        return Vector3.zero;
+    }
+
     public bool IsEnablePieceDrag() {
         // 回転中なら拒否
         if(IsRotation_) {
@@ -198,4 +211,98 @@ public class RubicsCubeController : MonoBehaviour {
         }
         return true;
     }
+
+    private List<Transform> DragCubes_ = new List<Transform>();
+
+    public void OnDragCancel() {
+        DragCubes_.Clear();
+    }
+
+    public void OnDragStart(Transform t) {
+        DragCubes_.Clear();
+        DragCubes_.Add(t);
+    }
+
+    public void OnDragOver(Transform t) {
+        // 無効
+        if(DragCubes_.Count == 0 || DragCubes_.Contains(t) || !IsEnablePieceDrag()) { 
+            return;
+        }
+
+        DragCubes_.Add(t);
+        // ドラッグで通過したキューブを含む平面が一つに特定できるか？
+        var surface = detectSurface(DragCubes_);
+        if(surface == null) {
+            // 一つに特定できない
+            return;
+        }
+
+        Debug.Log("Fire Rotate!");
+        DragCubes_.Clear();
+        /*
+        var from = DragFrom_;
+        var to = t;
+        DragFrom_ = null;
+        Debug.LogFormat("Raise drag {0} -> {1}", from.name, to.name);
+        */
+    }
+
+    private bool ContainsAll(Transform[] arrays, Transform[] targets) {
+        foreach(var t in targets) {
+            bool contain = false;
+            foreach(var a in arrays) {
+                if(a == t) {
+                    contain = true;
+                    break;
+                }
+            }
+
+            if(!contain) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private Transform[] detectSurface(List<Transform> transforms) {
+
+        string names = "";
+        foreach(var t in transforms) {
+            if(string.IsNullOrEmpty(names)) {
+                names = t.name;
+            } else {
+                names += ", " + t.name;
+            }
+        }
+        Debug.LogFormat("DetectSurface : Cubes=[{0}]", names);
+
+        int[,] filterParams = {
+            {0, -1, -1 },
+            {2, -1, -1 },
+            {-1, 0, -1 },
+            {-1, 2, -1 },
+            {-1, -1, 0 },
+            {-1, -1, 2 },
+        };
+
+        Transform[] surface = null;
+
+        for(int i = 0; i < 6 ; i++) {
+            var s = filterPiece(filterParams[i, 0], filterParams[i, 1], filterParams[i, 2]);
+
+            if(ContainsAll(s, transforms.ToArray())) {
+                if(surface != null) {
+                    Debug.Log("Matched multiple surface");
+                    return null;
+                }
+
+                Debug.LogFormat("DetectSurface : Found ({0}, {1}, {2})",
+                    filterParams[i, 0], filterParams[i, 1], filterParams[i, 2]);
+
+                surface = s;
+            }
+        }
+        return surface;
+    }
+
 }
