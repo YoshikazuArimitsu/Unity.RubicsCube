@@ -83,6 +83,15 @@ public class RubicsCubeController : MonoBehaviour {
         return null;
     }
 
+	private Transform lookupFirstEdge(Transform[] transforms) {
+		foreach(var t in transforms) {
+			if(t.name.StartsWith("Edge Piece")) {
+				return t;
+			}
+		}
+		return null;
+	}
+
     private void rebuildPieces() {
         var pieces = new Transform[3, 3, 3];
         // Core
@@ -153,14 +162,34 @@ public class RubicsCubeController : MonoBehaviour {
 
 	private void FireRotate(int filterX, int filterY, int filterZ, bool direction) {
 		RotateTransforms_ = filterPiece(filterX, filterY, filterZ);
-		RotateDirection_ = direction;
 		RotateCenter_ = lookupCenter(RotateTransforms_);
 		RotateAxis_ = RotateCenter_.transform.position - Core_.transform.position;
+		RotateDirection_ = direction;
 		TotalRotate_ = 0.0f;
 		IsRotation_ = true;
 
 		Debug.LogFormat("Fire Rotation : (x/y/z)=({0}, {1}, {2}), dir={3}",
 			filterX, filterY, filterZ, direction);
+	}
+
+	private void FireRotateBy2Cube(int filterX, int filterY, int filterZ, Transform from, Transform to) {
+		RotateTransforms_ = filterPiece(filterX, filterY, filterZ);
+		RotateCenter_ = lookupCenter(RotateTransforms_);
+		RotateAxis_ = RotateCenter_.transform.position - Core_.transform.position;
+
+		TotalRotate_ = 0.0f;
+		IsRotation_ = true;
+
+		var edge = lookupFirstEdge (RotateTransforms_);
+		var vecCenter2Edge = edge.transform.position - RotateCenter_.transform.position;
+		var vecCenter2From = from.position - RotateCenter_.transform.position;
+		var vecCenter2To = to.position - RotateCenter_.transform.position;
+
+		var angleFrom = Vector3.Angle (vecCenter2Edge, vecCenter2From);
+		var angleTo = Vector3.Angle (vecCenter2Edge, vecCenter2To);
+		Debug.LogFormat ("FireRotateBy2Cube : Axis={2} AngleFrom={0}, AngleTo={1}",
+			angleFrom, angleTo, RotateAxis_);
+		RotateDirection_ = angleTo > angleFrom;
 	}
 	
 	// Update is called once per frame
@@ -263,7 +292,7 @@ public class RubicsCubeController : MonoBehaviour {
         }
 
 		// 無移動
-		if (DragOrigin_ == drag && DragOriginInside_ == inside) {
+		if (DragOrigin_ == drag/* && DragOriginInside_ == inside */) {
 			return;
 		}
 
@@ -284,16 +313,10 @@ public class RubicsCubeController : MonoBehaviour {
             return;
         }
 
-        Debug.Log("Fire Rotate!");
+		FireRotateBy2Cube (surface [0], surface [1], surface [2], DragOrigin_, drag);
 
 		DragOrigin_ = null;
 		DragOriginInside_ = null;
-        /*
-        var from = DragFrom_;
-        var to = t;
-        DragFrom_ = null;
-        Debug.LogFormat("Raise drag {0} -> {1}", from.name, to.name);
-        */
     }
 
 	/// <summary>
@@ -336,19 +359,19 @@ public class RubicsCubeController : MonoBehaviour {
 
 		int[,] filterParams = {
             {0, -1, -1 },
-			{1, -1, -1 },
+			//{1, -1, -1 },
             {2, -1, -1 },
             {-1, 0, -1 },
-			{-1, 1, -1 },
+			//{-1, 1, -1 },
             {-1, 2, -1 },
             {-1, -1, 0 },
-			{-1, -1, 1 },
+			//{-1, -1, 1 },
             {-1, -1, 2 },
         };
 
         int[] surface = null;
 
-        for(int i = 0; i < 9 ; i++) {
+        for(int i = 0; i < 6 ; i++) {
             var s = filterPiece(filterParams[i, 0], filterParams[i, 1], filterParams[i, 2]);
 
             if(ContainsAll(s, transforms.ToArray())) {
