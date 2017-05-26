@@ -5,6 +5,7 @@ using UnityEngine;
 public class PieceController : MonoBehaviour {
     private Transform BaseCube_;
     private RubicsCubeController RubicsCubeController_;
+	private Transform InsideCube_;
 
     /*
     private bool RaisedFlick_ = false;
@@ -17,9 +18,20 @@ public class PieceController : MonoBehaviour {
         BaseCube_ = transform.parent;
         RubicsCubeController_ = BaseCube_.parent.GetComponent<RubicsCubeController>();
 
-        if(RubicsCubeController_ == null) {
-            Debug.Log("Error?");
-        }
+		// この面から親キューブにレイを飛ばし、更に一つ奥に位置するキューブを得る
+		var vec = BaseCube_.transform.position - transform.position;
+		Ray ray = new Ray (BaseCube_.transform.position, vec.normalized);
+		RaycastHit hit;
+
+		// Rayが衝突したかどうか
+		if (Physics.Raycast (ray, out hit)) {
+			InsideCube_ = hit.collider.GetComponent<Transform> ();
+		} else {
+		}
+
+		Debug.LogFormat("Start : {0}/{1} Inside={2}",
+			BaseCube_.name, name,
+			InsideCube_ != null ? InsideCube_.name : "null");
 	}
 	
 	// Update is called once per frame
