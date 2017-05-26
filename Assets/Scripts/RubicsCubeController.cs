@@ -160,6 +160,13 @@ public class RubicsCubeController : MonoBehaviour {
         rebuildPieces();
 	}
 
+	public static Vector3 RotateAroundPoint(Vector3 point, Vector3 pivot, Quaternion angle) {
+		var finalPos = point - pivot;
+		finalPos = angle * finalPos;
+		finalPos += pivot;
+		return finalPos;
+	}
+
 	private void FireRotate(int filterX, int filterY, int filterZ, bool direction) {
 		RotateTransforms_ = filterPiece(filterX, filterY, filterZ);
 		RotateCenter_ = lookupCenter(RotateTransforms_);
@@ -180,16 +187,24 @@ public class RubicsCubeController : MonoBehaviour {
 		TotalRotate_ = 0.0f;
 		IsRotation_ = true;
 
-		var edge = lookupFirstEdge (RotateTransforms_);
-		var vecCenter2Edge = edge.transform.position - RotateCenter_.transform.position;
-		var vecCenter2From = from.position - RotateCenter_.transform.position;
-		var vecCenter2To = to.position - RotateCenter_.transform.position;
+		// from を RotateAxis中心に±360/9 回転してみる。
+		// to との距離が近くなった方を実際の回転とする。
+		var q1 = Quaternion.AngleAxis(360.0f / 9, RotateAxis_);
+		var q2 = Quaternion.AngleAxis(-360.0f / 9, RotateAxis_);
 
-		var angleFrom = Vector3.Angle (vecCenter2Edge, vecCenter2From);
-		var angleTo = Vector3.Angle (vecCenter2Edge, vecCenter2To);
-		Debug.LogFormat ("FireRotateBy2Cube : Axis={2} AngleFrom={0}, AngleTo={1}",
-			angleFrom, angleTo, RotateAxis_);
-		RotateDirection_ = angleTo > angleFrom;
+		var p1 = RotateAroundPoint (from.transform.position, RotateCenter_.position, q1);
+		var p2 = RotateAroundPoint (from.transform.position, RotateCenter_.position, q2);
+
+		var d1 = Vector3.Distance (p1, to.transform.position);
+		var d2 = Vector3.Distance (p2, to.transform.position);
+		Debug.LogFormat ("from:{0}, from+q1:{1}/{3}, from+q2:{2}/{4}",
+			from.transform.position,
+			p1,
+			p2,
+			d1,
+			d2);
+
+		RotateDirection_ = d1 < d2;
 	}
 	
 	// Update is called once per frame
