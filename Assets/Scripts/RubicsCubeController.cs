@@ -46,6 +46,13 @@ public class RubicsCubeController : MonoBehaviour {
     private Transform RotateCenter_;
     private Vector3 RotateAxis_;
 
+	// シャッフルモード(Count>0)
+	private int ShuffleCount_ = 0;
+	private float TotalRotateReverse_ = 0.0f;
+
+	// 反転
+	private bool IsReversing_ = false;
+
     private int[] locatePiece(Transform o, float threashold = 0.3f) {
 		int[] r = new int[3];
 		r [0] = (o.transform.localPosition.x < Core_.transform.localPosition.x - threashold) ? 0 :
@@ -209,10 +216,9 @@ public class RubicsCubeController : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-        float rotateSpeed = 3.0f;
-
         // 回転トリガー
         if (!IsRotation_) {
+			// キーボード回転機能 0〜9,A,B
             KeyCode[] keyCodes = new KeyCode[] {
                 KeyCode.Alpha0,
                 KeyCode.Alpha1,
@@ -235,10 +241,27 @@ public class RubicsCubeController : MonoBehaviour {
                     break;
                 }
             }
+
+			// 反転
+			if (Input.GetKey (KeyCode.R)) {
+				IsReversing_ = true;
+				TotalRotateReverse_ = 0.0f;
+			}
+
+			// シャッフル
+			if (Input.GetKey (KeyCode.S)) {
+				ShuffleCount_ = 100;
+			}
         }
 
         // 回転
         if (IsRotation_) {
+			// 基本回転速度
+			float rotateSpeed = 3.0f;
+
+			// シャッフル中なら回転速度10倍
+			rotateSpeed = (ShuffleCount_ > 0) ? rotateSpeed * 5 : rotateSpeed;
+
             float rotate = rotateSpeed * (RotateDirection_ ? 90.0f : -90.0f);
             float deltaAngle = rotate * Time.deltaTime;
 
@@ -258,8 +281,38 @@ public class RubicsCubeController : MonoBehaviour {
                 IsRotation_ = false;
 
                 rebuildPieces();
+
+				// シャッフル中だったら回数デクリメント
+				ShuffleCount_ = ShuffleCount_ > 0 ? ShuffleCount_ - 1 : 0;
             }
         }
+
+		// 反転
+		if (IsReversing_) {
+			// 基本回転速度
+			float rotateSpeed = 3.0f;
+
+			float rotate = rotateSpeed * 180.0f;
+			float deltaAngle = rotate * Time.deltaTime;
+
+			if (Mathf.Abs(deltaAngle) + TotalRotateReverse_ >= 180.0f) {
+				float a = 180.0f - TotalRotateReverse_;
+				deltaAngle = (deltaAngle > 0.0f) ? a : -a;
+			}
+			transform.Rotate (0.0f, deltaAngle, 0.0f, Space.World);
+
+			TotalRotateReverse_ += Mathf.Abs(deltaAngle);
+			if (TotalRotateReverse_ >= 180.0f) {
+				Debug.Log ("reverse complete.");
+				IsReversing_ = false;
+			}
+		}
+
+		// シャッフル
+		if (!IsRotation_ && ShuffleCount_ > 0) {
+			var r = RotatePatterns_ [Random.Range ((int)0, RotatePatterns_.Length)];
+			FireRotate (r.FilterX, r.FilterY, r.FilterZ, r.Direction);
+		}
     }
 
     public Vector3 GetPieceLocation(Transform t) {
