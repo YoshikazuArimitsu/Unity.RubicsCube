@@ -15,6 +15,7 @@ public class HandDraggableMarker : MonoBehaviour,
                              IFocusable,
                              IInputHandler,
                              ISourceStateHandler {
+    public Transform Cursor;
     /// <summary>
     /// Event triggered when dragging starts.
     /// </summary>
@@ -107,9 +108,10 @@ public class HandDraggableMarker : MonoBehaviour,
 
     private void prevDragging() {
         // transformを設置してドラッグで移動させる
-        var vecGaze = GazeManager.Instance.GazeNormal - GazeManager.Instance.GazeOrigin;
-        transform.position = mainCamera.transform.position + vecGaze.normalized * 2;
+        //var vecGaze = GazeManager.Instance.GazeNormal - GazeManager.Instance.GazeOrigin;
+        //transform.position = mainCamera.transform.position + vecGaze.normalized * 2;
         //Debug.LogFormat("prevDragging : {0}", transform.position);
+        transform.position = this.Cursor.position;
 
         SurfaceController sc = getRayHitSurface();
         if(sc != null) {
