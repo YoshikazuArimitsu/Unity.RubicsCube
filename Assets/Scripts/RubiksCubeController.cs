@@ -49,17 +49,17 @@ public class RubiksCubeController : MonoBehaviour {
         new RotatePattern(-1, -1, 2, false),
     };
 
-	// ドラッグ起点
+	// ドラッグ起点&内側ピース
 	private Transform DragOrigin_;
 	private Transform DragOriginInside_;
 
     // 回転状態パラメータ
-    private bool IsRotation_ = false;
-    private float TotalRotate_ = 0.0f;
-    private bool RotateDirection_ = false;
-    private Transform[] RotateTransforms_;
-    private Transform RotateCenter_;
-    private Vector3 RotateAxis_;
+    private bool IsRotation_ = false;       // 回転フラグ
+    private float TotalRotate_ = 0.0f;      // トータル回転角
+    private Vector3 RotateAxis_;            // 回転軸
+    private bool RotateDirection_ = false;  // 回転方向
+    private Transform[] RotateTransforms_;  // 回転するピースの集合(9)
+    private Transform RotateCenter_;        // RotationTransforms中心ピース
 
 	// シャッフルモード(Count>0)
 	private int ShuffleCount_ = 0;
@@ -70,10 +70,52 @@ public class RubiksCubeController : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		rebuildPieces();
+		RebuildPieces();
 	}
 
-    private int[] locatePiece(Transform o, float threashold = 0.3f) {
+    /// <summary>
+    /// point を pivot 中心に angle 回転する。
+    /// </summary>
+    /// <param name="point"></param>
+    /// <param name="pivot"></param>
+    /// <param name="angle"></param>
+    /// <returns></returns>
+    public static Vector3 RotateAroundPoint(Vector3 point, Vector3 pivot, Quaternion angle) {
+        var finalPos = point - pivot;
+        finalPos = angle * finalPos;
+        finalPos += pivot;
+        return finalPos;
+    }
+
+    /// <summary>
+    /// Arraysの配列がtargetsの配列の内容を全て含むか
+    /// </summary>
+    /// <param name="arrays">Arrays.</param>
+    /// <param name="targets">Targets.</param>
+    private static bool ContainsAll(Transform[] arrays, Transform[] targets) {
+        foreach (var t in targets) {
+            bool contain = false;
+            foreach (var a in arrays) {
+                if (a == t) {
+                    contain = true;
+                    break;
+                }
+            }
+
+            if (!contain) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// ピースのローカル座標から Piece_ 配列内 x,y,z に変換
+    /// </summary>
+    /// <param name="o"></param>
+    /// <param name="threashold"></param>
+    /// <returns></returns>
+    private int[] LocatePiece(Transform o, float threashold = 0.3f) {
 		int[] r = new int[3];
 		r [0] = (o.transform.localPosition.x < Core_.transform.localPosition.x - threashold) ? 0 :
 			(o.transform.localPosition.x > Core_.transform.localPosition.x + threashold) ? 2 : 1;
@@ -84,7 +126,14 @@ public class RubiksCubeController : MonoBehaviour {
 		return r;
 	}
 
-    private Transform[] filterPiece(int x = -1, int y = -1, int z = -1) {
+    /// <summary>
+    /// 座標 x, y, z (-1は無視) にマッチするピース配列を得る
+    /// </summary>
+    /// <param name="x"></param>
+    /// <param name="y"></param>
+    /// <param name="z"></param>
+    /// <returns></returns>
+    private Transform[] FilterPieces(int x = -1, int y = -1, int z = -1) {
         List<Transform> transformList = new List<Transform>();
 
         for(int _x = 0; _x < 3; _x++) {
@@ -101,7 +150,12 @@ public class RubiksCubeController : MonoBehaviour {
         return transformList.ToArray();
     }
 
-    private Transform lookupCenter(Transform[] transforms) {
+    /// <summary>
+    /// Piece集合からCenter Pieceを得る(複数あった場合は先頭)
+    /// </summary>
+    /// <param name="transforms"></param>
+    /// <returns></returns>
+    private Transform LookupCenter(Transform[] transforms) {
         foreach(var t in transforms) {
             if(t.name.StartsWith("Center Piece")) {
                 return t;
@@ -110,26 +164,29 @@ public class RubiksCubeController : MonoBehaviour {
         return null;
     }
 
-	private Transform lookupFirstEdge(Transform[] transforms) {
-		foreach(var t in transforms) {
-			if(t.name.StartsWith("Edge Piece")) {
-				return t;
-			}
-		}
-		return null;
-	}
-
-	private Transform lookupRotateCenter(Transform[] transforms) {
+    /// <summary>
+    /// 回転の中心ピースを得る
+    /// 1. Core Piece を含む場合はそいつ
+    /// 2. 含まない場合は Center Piece が一つ含まれる
+    /// </summary>
+    /// <param name="transforms"></param>
+    /// <returns></returns>
+	private Transform LookupRotateCenter(Transform[] transforms) {
 		foreach (var t in transforms) {
 			if (t == Core_) {
 				return t;
 			}
 		}
-		return lookupCenter(transforms);
+		return LookupCenter(transforms);
 	}
 
-	private Vector3 rotateAxis(Transform[] transforms) {
-		var center = lookupRotateCenter(transforms);
+    /// <summary>
+    /// transforms平面の回転軸ベクトル取得
+    /// </summary>
+    /// <param name="transforms"></param>
+    /// <returns></returns>
+	private Vector3 CalcRotateAxis(Transform[] transforms) {
+		var center = LookupRotateCenter(transforms);
 
 		// 中心を含まない場合、キューブ中心から回転面中央キューブへのベクトルが回転軸となる
 		if (center != Core_) {
@@ -147,6 +204,7 @@ public class RubiksCubeController : MonoBehaviour {
 			var c = ContainsAll (transforms, new Transform[] { target });
 
 			if (c == false) {
+                // 
 				return target.transform.position - Core_.transform.position;
 			}
 		}
@@ -155,7 +213,10 @@ public class RubiksCubeController : MonoBehaviour {
 		return Vector3.zero;
 	}
 
-    private void rebuildPieces() {
+    /// <summary>
+    /// Pieces_配列再構築
+    /// </summary>
+    private void RebuildPieces() {
         var pieces = new Transform[3, 3, 3];
         // Core
         Core_ = transform.Find("Core");
@@ -165,7 +226,7 @@ public class RubiksCubeController : MonoBehaviour {
         // Centers
         for (int i = 1; i <= 6; i++) {
             var t = transform.Find("Center Piece " + i);
-            var l = locatePiece(t);
+            var l = LocatePiece(t);
             pieces[l[0], l[1], l[2]] = t;
 
 			/*
@@ -178,7 +239,7 @@ public class RubiksCubeController : MonoBehaviour {
         // Corners
         for (int i = 1; i <= 8; i++) {
             var t = transform.Find("Corner Piece " + i);
-            var l = locatePiece(t);
+            var l = LocatePiece(t);
             pieces[l[0], l[1], l[2]] = t;
 
 			/*
@@ -191,7 +252,7 @@ public class RubiksCubeController : MonoBehaviour {
         // Centers
         for (int i = 1; i <= 12; i++) {
             var t = transform.Find("Edge Piece " + i);
-            var l = locatePiece(t);
+            var l = LocatePiece(t);
             pieces[l[0], l[1], l[2]] = t;
 
 			/*
@@ -203,34 +264,33 @@ public class RubiksCubeController : MonoBehaviour {
 
         Pieces_ = pieces;
 
-		UpdateInsideCubes ();
+		UpdateInsidePieces ();
     }
 
-	public static Vector3 RotateAroundPoint(Vector3 point, Vector3 pivot, Quaternion angle) {
-		var finalPos = point - pivot;
-		finalPos = angle * finalPos;
-		finalPos += pivot;
-		return finalPos;
-	}
-
-	private void UpdateInsideCubes() {
+    /// <summary>
+    /// 全SurfaceのInsidePiece更新
+    /// </summary>
+	private void UpdateInsidePieces() {
 		var surfaces = GameObject.FindGameObjectsWithTag ("Surface Cube");
 		//Debug.LogFormat ("updateInsideCubes: surfaces={0}", surfaces.Length);
 
 		foreach (var s in surfaces) {
-			var pc = s.GetComponent<PieceController> ();
+			var pc = s.GetComponent<SurfaceController> ();
 			if (pc != null) {
 				pc.UpdateInsideCube ();
 			}
 		}
 	}
 
+    /// <summary>
+    /// クリアしたかチェック
+    /// </summary>
 	private void CheckClear() {
 		var surfaces = GameObject.FindGameObjectsWithTag ("Surface Cube");
 
 		// 全表面の奥キューブが初期状態のものと一致すればクリア
 		foreach (var s in surfaces) {
-			var pc = s.GetComponent<PieceController> ();
+			var pc = s.GetComponent<SurfaceController> ();
 			if (pc != null) {
 				if (!pc.HasInitInside ()) {
 					return;
@@ -240,16 +300,24 @@ public class RubiksCubeController : MonoBehaviour {
 
 		Debug.Log ("Cleared!!!!!");
 		if (ClearAudio != null) {
+            // テーレッテレー
 			var audioSource = gameObject.GetComponent<AudioSource> ();
 			audioSource.clip = ClearAudio;
 			audioSource.Play ();
 		}
 	}
 
+    /// <summary>
+    /// 回転実行
+    /// </summary>
+    /// <param name="filterX"></param>
+    /// <param name="filterY"></param>
+    /// <param name="filterZ"></param>
+    /// <param name="direction"></param>
 	private void FireRotate(int filterX, int filterY, int filterZ, bool direction) {
-		RotateTransforms_ = filterPiece(filterX, filterY, filterZ);
-		RotateCenter_ = lookupRotateCenter (RotateTransforms_);
-		RotateAxis_ = rotateAxis (RotateTransforms_);
+		RotateTransforms_ = FilterPieces(filterX, filterY, filterZ);
+		RotateCenter_ = LookupRotateCenter (RotateTransforms_);
+		RotateAxis_ = CalcRotateAxis (RotateTransforms_);
 		RotateDirection_ = direction;
 		TotalRotate_ = 0.0f;
 		IsRotation_ = true;
@@ -266,10 +334,19 @@ public class RubiksCubeController : MonoBehaviour {
 		}
 	}
 
+    /// <summary>
+    /// 回転実行。
+    /// 平面と、ユーザ操作によりどのピースからどのピースへフリック操作を行ったかにより回転方向を判定する。
+    /// </summary>
+    /// <param name="filterX"></param>
+    /// <param name="filterY"></param>
+    /// <param name="filterZ"></param>
+    /// <param name="from"></param>
+    /// <param name="to"></param>
 	private void FireRotateBy2Cube(int filterX, int filterY, int filterZ, Transform from, Transform to) {
-		var transforms = filterPiece(filterX, filterY, filterZ);
-		var center = lookupRotateCenter (transforms);
-		var axis = rotateAxis (transforms);
+		var transforms = FilterPieces(filterX, filterY, filterZ);
+		var center = LookupRotateCenter (transforms);
+		var axis = CalcRotateAxis (transforms);
 
 		// from を RotateAxis中心に±360/9 回転してみる。
 		// to との距離が近くなった方を実際の回転とする。
@@ -367,7 +444,7 @@ public class RubiksCubeController : MonoBehaviour {
                 IsRotation_ = false;
 
 				// キューブ情報組み直し
-                rebuildPieces();
+                RebuildPieces();
 
 				if (ShuffleCount_ > 0) {
 					// シャッフル中だったら回数デクリメント
@@ -407,19 +484,10 @@ public class RubiksCubeController : MonoBehaviour {
 		}
     }
 
-    public Vector3 GetPieceLocation(Transform t) {
-        for (int _x = 0; _x < 3; _x++) {
-            for (int _y = 0; _y < 3; _y++) {
-                for (int _z = 0; _z < 3; _z++) {
-                    if(Pieces_[_x, _y, _z] == t) {
-                        return new Vector3(_x, _y, _z);
-                    }
-                }
-            }
-        }
-        return Vector3.zero;
-    }
-
+    /// <summary>
+    /// ドラッグによる回転の発生を許可するか
+    /// </summary>
+    /// <returns></returns>
     public bool IsEnablePieceDrag() {
         // 回転中なら拒否
         if(IsRotation_) {
@@ -428,11 +496,19 @@ public class RubiksCubeController : MonoBehaviour {
         return true;
     }
 
+    /// <summary>
+    /// ドラッグキャンセル
+    /// </summary>
     public void OnDragCancel() {
 		DragOrigin_ = null;
 		DragOriginInside_ = null;
     }
 
+    /// <summary>
+    /// ドラッグ開始
+    /// </summary>
+    /// <param name="drag"></param>
+    /// <param name="inside"></param>
 	public void OnDragStart(Transform drag, Transform inside) {
 		DragOrigin_ = drag;
 		DragOriginInside_ = inside;
@@ -441,18 +517,23 @@ public class RubiksCubeController : MonoBehaviour {
 		//	DragOrigin_.name, DragOriginInside_.name);
     }
 
+    /// <summary>
+    /// ドラッグ移動
+    /// </summary>
+    /// <param name="drag"></param>
+    /// <param name="inside"></param>
 	public void OnDragOver(Transform drag, Transform inside) {
         // 無効
 		if(DragOrigin_ == null || !IsEnablePieceDrag()) { 
             return;
         }
 
-		// 無移動
-		if (DragOrigin_ == drag/* && DragOriginInside_ == inside */) {
+		// 無変更
+		if (DragOrigin_ == drag) {
 			return;
 		}
 
-		// ドラッグで通過したキューブを含む平面が一つに特定できるか？
+		// ドラッグで通過したピースを含む平面が一つに特定できるか？
 		List<Transform> cubes = new List<Transform> () {
 			DragOrigin_, DragOriginInside_
 		};
@@ -463,7 +544,7 @@ public class RubiksCubeController : MonoBehaviour {
 			cubes.Add (inside);
 		}
 
-		var surface = detectSurface(cubes.ToArray());
+		var surface = DetectRotatePlane(cubes.ToArray());
         if(surface == null) {
             // 一つに特定できない
             return;
@@ -475,31 +556,13 @@ public class RubiksCubeController : MonoBehaviour {
 		DragOriginInside_ = null;
     }
 
-	/// <summary>
-	/// Containses all.
-	/// Arraysの配列がtargetsの配列の内容を全て含むか
-	/// </summary>
-	/// <returns><c>true</c>, if all was containsed, <c>false</c> otherwise.</returns>
-	/// <param name="arrays">Arrays.</param>
-	/// <param name="targets">Targets.</param>
-    private static bool ContainsAll(Transform[] arrays, Transform[] targets) {
-        foreach(var t in targets) {
-            bool contain = false;
-            foreach(var a in arrays) {
-                if(a == t) {
-                    contain = true;
-                    break;
-                }
-            }
-
-            if(!contain) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-	private int[] detectSurface(Transform[] transforms) {
+    /// <summary>
+    /// transforms を全て含む回転可能面が1つだけあれば x,y,z を返す。
+    /// </summary>
+    /// <param name="transforms"></param>
+    /// <returns></returns>
+	private int[] DetectRotatePlane(Transform[] transforms) {
+        /*
 		{
 			string names = "";
 			foreach (var t in transforms) {
@@ -509,9 +572,11 @@ public class RubiksCubeController : MonoBehaviour {
 					names += ", " + t.name;
 				}
 			}
-			//Debug.LogFormat ("DetectSurface : Cubes=[{0}]", names);
+			Debug.LogFormat ("DetectSurface : Cubes=[{0}]", names);
 		}
+        */
 
+        // 回転可能平面パラメータリスト
 		int[,] filterParams = {
             { 0, -1, -1 },
 			{ 1, -1, -1 },
@@ -524,24 +589,26 @@ public class RubiksCubeController : MonoBehaviour {
             {-1, -1,  2 },
         };
 
-        int[] surface = null;
+        int[] planeParam = null;
 
         for(int i = 0; i < 9 ; i++) {
-            var s = filterPiece(filterParams[i, 0], filterParams[i, 1], filterParams[i, 2]);
+            var s = FilterPieces(filterParams[i, 0], filterParams[i, 1], filterParams[i, 2]);
 
+            // 回転面が transforms を全て含んでいる？
             if(ContainsAll(s, transforms)) {
-                if(surface != null) {
+                if(planeParam != null) {
+                    // 2面目が見つかってしまった。
                     return null;
                 }
 
                 //Debug.LogFormat("DetectSurface : Found ({0}, {1}, {2})",
                 //    filterParams[i, 0], filterParams[i, 1], filterParams[i, 2]);
-				surface = new int[] {
+				planeParam = new int[] {
 					filterParams [i, 0], filterParams [i, 1], filterParams [i, 2]
 				};
             }
         }
-        return surface;
+        return planeParam;
     }
 
 }
