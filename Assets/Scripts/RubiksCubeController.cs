@@ -380,6 +380,7 @@ public class RubiksCubeController : MonoBehaviour {
     void Update () {
         // 回転トリガー
         if (!IsRotation_) {
+            /*
 			// キーボード回転機能 0〜9,A〜H
             KeyCode[] keyCodes = new KeyCode[] {
                 KeyCode.Alpha0,
@@ -420,6 +421,7 @@ public class RubiksCubeController : MonoBehaviour {
 			if (Input.GetKey (KeyCode.S)) {
                 FireShuffle();
 			}
+            */
         }
 
         // 回転

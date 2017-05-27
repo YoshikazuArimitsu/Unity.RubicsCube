@@ -19,7 +19,26 @@ public class BillBoardExt : MonoBehaviour {
     [Tooltip("Specifies the axis about which the object will rotate.")]
     public PivotAxis PivotAxis = PivotAxis.Free;
 
+    public GameObject PivotObject;
+    private float PivotObjectAngle;
+
+    /// <summary>
+    /// ピボット対象から自オブジェクトとカメラに対するXZ平面の角度を得る
+    /// </summary>
+    /// <returns></returns>
+    private float calcPivotObjectAngle() {
+        Vector3 cameraVec = Camera.main.transform.position - PivotObject.transform.position;
+        Vector3 meVec = transform.position - PivotObject.transform.position;
+
+        Vector3 cameraVecXZ = new Vector3(cameraVec.x, 0, cameraVec.z);
+        Vector3 meVecXZ = new Vector3(meVec.x, 0, meVec.z);
+
+        return Vector3.Angle(meVecXZ, cameraVecXZ);
+    }
+
     private void OnEnable() {
+        PivotObjectAngle = calcPivotObjectAngle();
+
         Update();
     }
 
@@ -31,6 +50,18 @@ public class BillBoardExt : MonoBehaviour {
             return;
         }
 
+        // ピボット対象から自オブジェクトとカメラに対する角度を計算し、
+        // 初期角度を保つようにピボット対象の周りを回転する。
+        {
+            var angle = calcPivotObjectAngle();
+
+            transform.RotateAround(
+                PivotObject.transform.position,
+                Vector3.up,
+                PivotObjectAngle - angle);
+        }
+
+        // 通常ビルボードの実装部分
         // Get a Vector that points from the target to the main camera.
         Vector3 directionToTarget = Camera.main.transform.position - transform.position;
 
