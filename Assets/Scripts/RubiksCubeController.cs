@@ -64,9 +64,11 @@ public class RubiksCubeController : MonoBehaviour {
 	// シャッフルモード(Count>0)
 	private int ShuffleCount_ = 0;
 	private float TotalRotateReverse_ = 0.0f;
+    public delegate void ShuffleCompleteDelegate();
+    public event ShuffleCompleteDelegate ShuffleCompleted;
 
-	// 反転
-	private bool IsReversing_ = false;
+    // 反転
+    private bool IsReversing_ = false;
 
 	// Use this for initialization
 	void Start () {
@@ -369,9 +371,13 @@ public class RubiksCubeController : MonoBehaviour {
 
 		FireRotate (filterX, filterY, filterZ, d1 < d2);
 	}
-	
-	// Update is called once per frame
-	void Update () {
+
+    public void FireShuffle() {
+        ShuffleCount_ = 200;
+    }
+
+    // Update is called once per frame
+    void Update () {
         // 回転トリガー
         if (!IsRotation_) {
 			// キーボード回転機能 0〜9,A〜H
@@ -412,7 +418,7 @@ public class RubiksCubeController : MonoBehaviour {
 
 			// シャッフル
 			if (Input.GetKey (KeyCode.S)) {
-				ShuffleCount_ = 200;
+                FireShuffle();
 			}
         }
 
@@ -449,6 +455,13 @@ public class RubiksCubeController : MonoBehaviour {
 				if (ShuffleCount_ > 0) {
 					// シャッフル中だったら回数デクリメント
 					ShuffleCount_ = ShuffleCount_ > 0 ? ShuffleCount_ - 1 : 0;
+
+                    if(ShuffleCount_ == 0) {
+                        // シャッフル完了
+                        if(ShuffleCompleted != null) {
+                            ShuffleCompleted();
+                        }
+                    }
 				} else {
 					// クリアかチェック
 					CheckClear ();
@@ -474,6 +487,8 @@ public class RubiksCubeController : MonoBehaviour {
 			if (TotalRotateReverse_ >= 180.0f) {
 				//Debug.Log ("reverse complete.");
 				IsReversing_ = false;
+
+
 			}
 		}
 
