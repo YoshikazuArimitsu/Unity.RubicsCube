@@ -20,8 +20,9 @@ public class RubiksCubeController : MonoBehaviour {
 	// Unity Properties
 	public AudioClip RotateAudio;
 	public AudioClip ClearAudio;
+	public float RotateSpeed = 3.0f;
 
-    // 中心キューブ
+    // 中心ピース
 	private Transform Core_;
     // 3x3x3 ピース配列
     private Transform[,,] Pieces_ = new Transform[3, 3, 3];
@@ -47,6 +48,10 @@ public class RubiksCubeController : MonoBehaviour {
         new RotatePattern(-1, -1, 2, true),
         new RotatePattern(-1, -1, 2, false),
     };
+
+	// ドラッグ起点
+	private Transform DragOrigin_;
+	private Transform DragOriginInside_;
 
     // 回転状態パラメータ
     private bool IsRotation_ = false;
@@ -337,7 +342,7 @@ public class RubiksCubeController : MonoBehaviour {
         // 回転
         if (IsRotation_) {
 			// 基本回転速度
-			float rotateSpeed = 3.0f;
+			float rotateSpeed = RotateSpeed;
 
 			// シャッフル中なら回転速度8倍
 			rotateSpeed = (ShuffleCount_ > 0) ? rotateSpeed * 8 : rotateSpeed;
@@ -377,7 +382,7 @@ public class RubiksCubeController : MonoBehaviour {
 		// 反転
 		if (IsReversing_) {
 			// 基本回転速度
-			float rotateSpeed = 3.0f;
+			float rotateSpeed = RotateSpeed;
 
 			float rotate = rotateSpeed * 180.0f;
 			float deltaAngle = rotate * Time.deltaTime;
@@ -423,9 +428,6 @@ public class RubiksCubeController : MonoBehaviour {
         return true;
     }
 
-	private Transform DragOrigin_;
-	private Transform DragOriginInside_;
-
     public void OnDragCancel() {
 		DragOrigin_ = null;
 		DragOriginInside_ = null;
@@ -435,9 +437,8 @@ public class RubiksCubeController : MonoBehaviour {
 		DragOrigin_ = drag;
 		DragOriginInside_ = inside;
 
-		Debug.LogFormat("OnDragStart : Cubes=[{0}, {1}]",
-			DragOrigin_.name, DragOriginInside_.name);
-
+		//Debug.LogFormat("OnDragStart : Cubes=[{0}, {1}]",
+		//	DragOrigin_.name, DragOriginInside_.name);
     }
 
 	public void OnDragOver(Transform drag, Transform inside) {
@@ -462,7 +463,7 @@ public class RubiksCubeController : MonoBehaviour {
 			cubes.Add (inside);
 		}
 
-		var surface = detectSurface(cubes);
+		var surface = detectSurface(cubes.ToArray());
         if(surface == null) {
             // 一つに特定できない
             return;
@@ -498,7 +499,7 @@ public class RubiksCubeController : MonoBehaviour {
         return true;
     }
 
-	private int[] detectSurface(List<Transform> transforms) {
+	private int[] detectSurface(Transform[] transforms) {
 		{
 			string names = "";
 			foreach (var t in transforms) {
@@ -528,13 +529,13 @@ public class RubiksCubeController : MonoBehaviour {
         for(int i = 0; i < 9 ; i++) {
             var s = filterPiece(filterParams[i, 0], filterParams[i, 1], filterParams[i, 2]);
 
-            if(ContainsAll(s, transforms.ToArray())) {
+            if(ContainsAll(s, transforms)) {
                 if(surface != null) {
                     return null;
                 }
 
-                Debug.LogFormat("DetectSurface : Found ({0}, {1}, {2})",
-                    filterParams[i, 0], filterParams[i, 1], filterParams[i, 2]);
+                //Debug.LogFormat("DetectSurface : Found ({0}, {1}, {2})",
+                //    filterParams[i, 0], filterParams[i, 1], filterParams[i, 2]);
 				surface = new int[] {
 					filterParams [i, 0], filterParams [i, 1], filterParams [i, 2]
 				};
