@@ -69,9 +69,11 @@ public class RubiksCubeController : MonoBehaviour {
 
     // 反転
     private bool IsReversing_ = false;
+    public delegate void ReverseCompleteDelegate();
+    public event ReverseCompleteDelegate ReverseCompleted;
 
-	// Use this for initialization
-	void Start () {
+    // Use this for initialization
+    void Start () {
 		RebuildPieces();
 	}
 
@@ -372,15 +374,25 @@ public class RubiksCubeController : MonoBehaviour {
 		FireRotate (filterX, filterY, filterZ, d1 < d2);
 	}
 
+    /// <summary>
+    /// シャッフル開始
+    /// </summary>
     public void FireShuffle() {
         ShuffleCount_ = 200;
+    }
+
+    /// <summary>
+    /// 反転開始
+    /// </summary>
+    public void FireReverse() {
+        IsReversing_ = true;
+        TotalRotateReverse_ = 0.0f;
     }
 
     // Update is called once per frame
     void Update () {
         // 回転トリガー
         if (!IsRotation_) {
-            /*
 			// キーボード回転機能 0〜9,A〜H
             KeyCode[] keyCodes = new KeyCode[] {
                 KeyCode.Alpha0,
@@ -413,15 +425,13 @@ public class RubiksCubeController : MonoBehaviour {
 
 			// 反転
 			if (Input.GetKey (KeyCode.R)) {
-				IsReversing_ = true;
-				TotalRotateReverse_ = 0.0f;
+                FireReverse();
 			}
 
 			// シャッフル
 			if (Input.GetKey (KeyCode.S)) {
                 FireShuffle();
 			}
-            */
         }
 
         // 回転
@@ -471,34 +481,39 @@ public class RubiksCubeController : MonoBehaviour {
             }
         }
 
-		// 反転
-		if (IsReversing_) {
-			// 基本回転速度
-			float rotateSpeed = RotateSpeed;
-
-			float rotate = rotateSpeed * 180.0f;
-			float deltaAngle = rotate * Time.deltaTime;
-
-			if (Mathf.Abs(deltaAngle) + TotalRotateReverse_ >= 180.0f) {
-				float a = 180.0f - TotalRotateReverse_;
-				deltaAngle = (deltaAngle > 0.0f) ? a : -a;
-			}
-			transform.Rotate (0.0f, deltaAngle, 0.0f, Space.World);
-
-			TotalRotateReverse_ += Mathf.Abs(deltaAngle);
-			if (TotalRotateReverse_ >= 180.0f) {
-				//Debug.Log ("reverse complete.");
-				IsReversing_ = false;
-
-
-			}
-		}
-
 		// シャッフル
 		if (!IsRotation_ && ShuffleCount_ > 0) {
 			var r = RotatePatterns_ [Random.Range ((int)0, RotatePatterns_.Length)];
 			FireRotate (r.FilterX, r.FilterY, r.FilterZ, r.Direction);
 		}
+
+        // 反転
+        // 回転中なら回転が完了するまで起動しない
+        if (IsReversing_ && !IsRotation_) {
+            // 基本回転速度
+            float rotateSpeed = RotateSpeed;
+
+            float rotate = rotateSpeed * 180.0f;
+            float deltaAngle = rotate * Time.deltaTime;
+
+            if (Mathf.Abs(deltaAngle) + TotalRotateReverse_ >= 180.0f) {
+                float a = 180.0f - TotalRotateReverse_;
+                deltaAngle = (deltaAngle > 0.0f) ? a : -a;
+            }
+            transform.Rotate(0.0f, deltaAngle, 0.0f, Space.World);
+
+            TotalRotateReverse_ += Mathf.Abs(deltaAngle);
+            if (TotalRotateReverse_ >= 180.0f) {
+                // 反転完了
+                //Debug.Log ("reverse complete.");
+                IsReversing_ = false;
+
+                if (ReverseCompleted != null) {
+                    ReverseCompleted();
+                }
+            }
+        }
+
     }
 
     /// <summary>
