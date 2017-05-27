@@ -17,6 +17,8 @@ class RotatePattern {
 }
 
 public class RubiksCubeController : MonoBehaviour {
+	// Unity Properties
+	public AudioClip RotateAudio;
 	public AudioClip ClearAudio;
 
     // 中心キューブ
@@ -122,7 +124,7 @@ public class RubiksCubeController : MonoBehaviour {
 	}
 
 	private Vector3 rotateAxis(Transform[] transforms) {
-		var center = lookupRotateCenter(RotateTransforms_);
+		var center = lookupRotateCenter(transforms);
 
 		// 中心を含まない場合、キューブ中心から回転面中央キューブへのベクトルが回転軸となる
 		if (center != Core_) {
@@ -237,7 +239,6 @@ public class RubiksCubeController : MonoBehaviour {
 			audioSource.clip = ClearAudio;
 			audioSource.Play ();
 		}
-
 	}
 
 	private void FireRotate(int filterX, int filterY, int filterZ, bool direction) {
@@ -248,36 +249,43 @@ public class RubiksCubeController : MonoBehaviour {
 		TotalRotate_ = 0.0f;
 		IsRotation_ = true;
 
+		/*
 		Debug.LogFormat("Fire Rotation : (x/y/z)=({0}, {1}, {2}), dir={3}",
 			filterX, filterY, filterZ, direction);
+		*/
+
+		if (RotateAudio != null) {
+			var audioSource = gameObject.GetComponent<AudioSource> ();
+			audioSource.clip = RotateAudio;
+			audioSource.Play ();
+		}
 	}
 
 	private void FireRotateBy2Cube(int filterX, int filterY, int filterZ, Transform from, Transform to) {
-		RotateTransforms_ = filterPiece(filterX, filterY, filterZ);
-		RotateCenter_ = lookupRotateCenter (RotateTransforms_);
-		RotateAxis_ = rotateAxis (RotateTransforms_);
-
-		TotalRotate_ = 0.0f;
-		IsRotation_ = true;
+		var transforms = filterPiece(filterX, filterY, filterZ);
+		var center = lookupRotateCenter (transforms);
+		var axis = rotateAxis (transforms);
 
 		// from を RotateAxis中心に±360/9 回転してみる。
 		// to との距離が近くなった方を実際の回転とする。
-		var q1 = Quaternion.AngleAxis(360.0f / 9, RotateAxis_);
-		var q2 = Quaternion.AngleAxis(-360.0f / 9, RotateAxis_);
+		var q1 = Quaternion.AngleAxis(360.0f / 9, axis);
+		var q2 = Quaternion.AngleAxis(-360.0f / 9, axis);
 
-		var p1 = RotateAroundPoint (from.transform.position, RotateCenter_.position, q1);
-		var p2 = RotateAroundPoint (from.transform.position, RotateCenter_.position, q2);
+		var p1 = RotateAroundPoint (from.transform.position, center.position, q1);
+		var p2 = RotateAroundPoint (from.transform.position, center.position, q2);
 
 		var d1 = Vector3.Distance (p1, to.transform.position);
 		var d2 = Vector3.Distance (p2, to.transform.position);
+		/*
 		Debug.LogFormat ("from:{0}, from+q1:{1}/{3}, from+q2:{2}/{4}",
 			from.transform.position,
 			p1,
 			p2,
 			d1,
 			d2);
+		*/
 
-		RotateDirection_ = d1 < d2;
+		FireRotate (filterX, filterY, filterZ, d1 < d2);
 	}
 	
 	// Update is called once per frame
