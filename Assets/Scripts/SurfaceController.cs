@@ -1,6 +1,8 @@
-﻿using System.Collections;
+﻿using HoloToolkit.Unity.InputModule;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 public class SurfaceController : MonoBehaviour {
     /// <summary>
@@ -28,6 +30,8 @@ public class SurfaceController : MonoBehaviour {
     void Start () {
         BasePiece_ = transform.parent;
 		RubiksCubeController_ = BasePiece_.parent.GetComponent<RubiksCubeController>();
+
+        UpdateInsideCube();
 	}
 	
 	// Update is called once per frame
@@ -36,6 +40,9 @@ public class SurfaceController : MonoBehaviour {
 	}
 
 	public void UpdateInsideCube() {
+        if(BasePiece_ == null) {
+            return;
+        }
 		Transform newInside = null;
 
 		// この面から親ピースにレイを飛ばし、更に一つ奥に位置するピースを得る
@@ -60,6 +67,7 @@ public class SurfaceController : MonoBehaviour {
 		InitInsidePiece_ = (InitInsidePiece_ == null) ? InsidePiece_ : InitInsidePiece_;
 	}
 
+    /*
     void OnMouseUp() {
         RubiksCubeController_.OnDragCancel();
     }
@@ -71,8 +79,17 @@ public class SurfaceController : MonoBehaviour {
     void OnMouseOver() {
 		RubiksCubeController_.OnDragOver(BasePiece_, InsidePiece_);
     }
+    */
 
 	public bool HasInitInside() {
 		return InsidePiece_ == InitInsidePiece_;
 	}
+
+    public void InputDown() {
+        RubiksCubeController_.OnDragStart(BasePiece_, InsidePiece_);
+    }
+
+    public void InputOver() {
+        RubiksCubeController_.OnDragOver(BasePiece_, InsidePiece_);
+    }
 }

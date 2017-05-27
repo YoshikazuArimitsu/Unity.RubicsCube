@@ -509,7 +509,7 @@ PlayerSettings:
   m_MobileRenderingPath: 1
   metroPackageName: HoloRubiks
   metroPackageVersion: 1.0.0.0
-  metroCertificatePath: D:\git.bitbucket\Unity.RubicsCube\Assets\WSATestCertificate.pfx
+  metroCertificatePath: Assets\WSATestCertificate.pfx
   metroCertificatePassword: 
   metroCertificateSubject: Holographic Academy
   metroCertificateIssuer: Holographic Academy
