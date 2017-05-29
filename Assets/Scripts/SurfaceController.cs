@@ -5,6 +5,10 @@ using UnityEngine;
 using System;
 
 public class SurfaceController : MonoBehaviour {
+    private bool Selected_ = false;
+    public Material Material;
+    public Material SelectedMaterial;
+
     /// <summary>
     /// この面が属するピース
     /// </summary>
@@ -38,6 +42,15 @@ public class SurfaceController : MonoBehaviour {
 	void Update () {
 		
 	}
+
+    public void Select(bool selected) {
+        if(Selected_ != selected) {
+            // マテリアル切り替え
+            GetComponent<Renderer>().material = selected ? SelectedMaterial : Material;
+        }
+
+        Selected_ = selected;
+    }
 
 	public void UpdateInsideCube() {
         if(BasePiece_ == null) {
@@ -86,10 +99,10 @@ public class SurfaceController : MonoBehaviour {
 	}
 
     public void InputDown() {
-        RubiksCubeController_.OnDragStart(BasePiece_, InsidePiece_);
+        RubiksCubeController_.OnDragStart(this, BasePiece_, InsidePiece_);
     }
 
     public void InputOver() {
-        RubiksCubeController_.OnDragOver(BasePiece_, InsidePiece_);
+        RubiksCubeController_.OnDragOver(this, BasePiece_, InsidePiece_);
     }
 }

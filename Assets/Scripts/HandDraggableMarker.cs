@@ -15,6 +15,7 @@ public class HandDraggableMarker : MonoBehaviour,
                              IFocusable,
                              IInputHandler,
                              ISourceStateHandler {
+    public Transform RubiksCube;
     public Transform Cursor;
     /// <summary>
     /// Event triggered when dragging starts.
@@ -125,6 +126,11 @@ public class HandDraggableMarker : MonoBehaviour,
         if (sc != null) {
             sc.InputOver();
         }
+    }
+
+    private void postStopDragging() {
+        RubiksCubeController rbc = RubiksCube.GetComponent<RubiksCubeController>();
+        rbc.OnDragCancel();
     }
 
 
@@ -267,6 +273,8 @@ public class HandDraggableMarker : MonoBehaviour,
         isDragging = false;
         currentInputSource = null;
         StoppedDragging.RaiseEvent();
+
+        postStopDragging();
     }
 
     public void OnFocusEnter() {

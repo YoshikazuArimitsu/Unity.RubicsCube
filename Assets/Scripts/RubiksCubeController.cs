@@ -478,7 +478,10 @@ public class RubiksCubeController : MonoBehaviour {
                 //Debug.Log("rotate complete.");
                 IsRotation_ = false;
 
-				// キューブ情報組み直し
+                // 面選択解除
+                this.OnDragCancel();
+
+                // キューブ情報組み直し
                 RebuildPieces();
 
 				if (ShuffleCount_ > 0) {
@@ -549,8 +552,19 @@ public class RubiksCubeController : MonoBehaviour {
     /// ドラッグキャンセル
     /// </summary>
     public void OnDragCancel() {
+        if(IsRotation_) {
+            return;
+        }
 		DragOrigin_ = null;
 		DragOriginInside_ = null;
+
+        var surfaces = GameObject.FindGameObjectsWithTag("Surface Cube");
+        foreach (var s in surfaces) {
+            var pc = s.GetComponent<SurfaceController>();
+            if (pc != null) {
+                pc.Select(false);
+            }
+        }
     }
 
     /// <summary>
@@ -558,12 +572,14 @@ public class RubiksCubeController : MonoBehaviour {
     /// </summary>
     /// <param name="drag"></param>
     /// <param name="inside"></param>
-	public void OnDragStart(Transform drag, Transform inside) {
+	public void OnDragStart(SurfaceController surface, Transform drag, Transform inside) {
 		DragOrigin_ = drag;
 		DragOriginInside_ = inside;
 
-		//Debug.LogFormat("OnDragStart : Cubes=[{0}, {1}]",
-		//	DragOrigin_.name, DragOriginInside_.name);
+        surface.Select(true);
+
+        //Debug.LogFormat("OnDragStart : Cubes=[{0}, {1}]",
+        //	DragOrigin_.name, DragOriginInside_.name);
     }
 
     /// <summary>
@@ -571,7 +587,7 @@ public class RubiksCubeController : MonoBehaviour {
     /// </summary>
     /// <param name="drag"></param>
     /// <param name="inside"></param>
-	public void OnDragOver(Transform drag, Transform inside) {
+	public void OnDragOver(SurfaceController surface, Transform drag, Transform inside) {
         // 無効
 		if(DragOrigin_ == null || !IsEnablePieceDrag()) { 
             return;
@@ -582,8 +598,10 @@ public class RubiksCubeController : MonoBehaviour {
 			return;
 		}
 
-		// ドラッグで通過したピースを含む平面が一つに特定できるか？
-		List<Transform> cubes = new List<Transform> () {
+        surface.Select(true);
+
+        // ドラッグで通過したピースを含む平面が一つに特定できるか？
+        List<Transform> cubes = new List<Transform> () {
 			DragOrigin_, DragOriginInside_
 		};
 		if (!cubes.Contains (drag)) {
@@ -593,16 +611,17 @@ public class RubiksCubeController : MonoBehaviour {
 			cubes.Add (inside);
 		}
 
-		var surface = DetectRotatePlane(cubes.ToArray());
-        if(surface == null) {
+		var plane = DetectRotatePlane(cubes.ToArray());
+        if(plane == null) {
             // 一つに特定できない
             return;
         }
 
-		FireRotateBy2Cube (surface [0], surface [1], surface [2], DragOrigin_, drag);
+		FireRotateBy2Cube (plane[0], plane[1], plane[2],
+            DragOrigin_, drag);
 
-		DragOrigin_ = null;
-		DragOriginInside_ = null;
+        // 回転中は選択面を暗くしておきたいのでここではキャンセルしない。
+        // this.OnDragCancel();
     }
 
     /// <summary>
