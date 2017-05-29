@@ -524,6 +524,7 @@ PlayerSettings:
   metroCertificateNotAfter: 00e5c16c8497d301
   metroApplicationDescription: HoloRubiks
   wsaImages:
+    65636: Assets/UWP/StoreLogo.png
     2031816: Assets/UWP/Square44x44Logo.scale-200.png
     2162888: Assets/UWP/Square150x150Logo.scale-200.png
     2293960: Assets/UWP/Wide310x150Logo.scale-200.png

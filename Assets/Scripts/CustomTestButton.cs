@@ -187,4 +187,17 @@ public class CustomTestButton : MonoBehaviour, IInputClickHandler, IFocusable {
     private void OnDestroy() {
         DestroyImmediate(cachedToolTipMaterial);
     }
+
+    public void Show(bool show) {
+        Transform visual = transform.Find("Button_Visual");
+        Transform text = transform.Find("Button_Visual/Text");
+
+        if(visual != null) {
+            visual.GetComponent<Animator>().enabled = show;
+            visual.GetComponent<MeshRenderer>().enabled = show;
+        }
+        if(text != null) {
+            text.GetComponent<MeshRenderer>().enabled = show;
+        }
+    }
 }
