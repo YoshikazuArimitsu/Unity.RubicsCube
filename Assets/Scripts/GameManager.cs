@@ -45,7 +45,7 @@ public class GameManager : MonoBehaviour, IInputClickHandler {
         switch(GameState_) {
             case GameState.Play:
                 // 各コントローラを操作可能に
-                RubiksCube.GetComponent<RubiksCubeController>().ControleEnabled = true;
+                RubiksCube.GetComponent<RubiksCubeController>().ControlEnabled = true;
                 HandDraggableMarker.GetComponent<HandDraggableMarker>().IsDraggingEnabled = true;
                 Teretteree.GetComponent<GameClearController>().SetEnable(false);
                 ShuffleButton.GetComponent<CustomTestButton>().EnableActivation = true;
@@ -54,7 +54,7 @@ public class GameManager : MonoBehaviour, IInputClickHandler {
 
             case GameState.Terettere:
                 // 各コントローラを操作不可能に
-                RubiksCube.GetComponent<RubiksCubeController>().ControleEnabled = false;
+                RubiksCube.GetComponent<RubiksCubeController>().ControlEnabled = false;
                 HandDraggableMarker.GetComponent<HandDraggableMarker>().IsDraggingEnabled = false;
                 Teretteree.GetComponent<GameClearController>().SetEnable(true);
                 ShuffleButton.GetComponent<CustomTestButton>().EnableActivation = false;
@@ -64,6 +64,10 @@ public class GameManager : MonoBehaviour, IInputClickHandler {
     }
 
     public void OnInputClicked(InputClickedEventData eventData) {
+        if(GameState_ != GameState.Terettere) {
+            return;
+        }
+
         GameState_ = GameState.Play;
         UpdateControlls();
 

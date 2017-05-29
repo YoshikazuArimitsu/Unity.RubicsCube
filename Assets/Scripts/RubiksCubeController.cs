@@ -20,7 +20,7 @@ public class RubiksCubeController : MonoBehaviour {
 	// Unity Properties
 	public AudioClip RotateAudio;
 	public float RotateSpeed = 3.0f;
-    public bool ControleEnabled = true;
+    public bool ControlEnabled = true;
 
     // 中心ピース
 	private Transform Core_;
@@ -321,7 +321,7 @@ public class RubiksCubeController : MonoBehaviour {
     /// <param name="filterZ"></param>
     /// <param name="direction"></param>
 	private void FireRotate(int filterX, int filterY, int filterZ, bool direction) {
-        if(ControleEnabled == false) {
+        if(ControlEnabled == false) {
             // 操作不可状態
             return;
         }
@@ -385,7 +385,7 @@ public class RubiksCubeController : MonoBehaviour {
     /// シャッフル開始
     /// </summary>
     public void FireShuffle() {
-        if (ControleEnabled == false) {
+        if (ControlEnabled == false) {
             // 操作不可状態
             return;
         }
@@ -397,7 +397,7 @@ public class RubiksCubeController : MonoBehaviour {
     /// 反転開始
     /// </summary>
     public void FireReverse() {
-        if (ControleEnabled == false) {
+        if (ControlEnabled == false) {
             // 操作不可状態
             return;
         }
