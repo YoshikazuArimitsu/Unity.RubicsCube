@@ -11,6 +11,8 @@ public class TerettereeController : MonoBehaviour {
 	public int Duration2 = 100;
 	public int Duration3 = 200;
 
+    public bool Enabled = false;
+
 	private float BaseTime_;
 	private Transform[] Spheres_;
 
@@ -28,6 +30,10 @@ public class TerettereeController : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
+        if(Enabled == false) {
+            return;
+        }
+
 		BaseTime_ += Time.deltaTime;
 
 		int totalDuration = Duration1 + Duration2 * 2 + Duration3;
@@ -59,4 +65,13 @@ public class TerettereeController : MonoBehaviour {
 			s.GetComponent<Renderer> ().material = m;
 		}
 	}
+
+    public void SetEnable(bool enable) {
+        Enabled = enable;
+        if(!Enabled) {
+            foreach(var s in Spheres_) {
+                s.GetComponent<MeshRenderer>().enabled = false;
+            }
+        }
+    }
 }
