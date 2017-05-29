@@ -33,7 +33,13 @@ public class BillBoardExt : MonoBehaviour {
         Vector3 cameraVecXZ = new Vector3(cameraVec.x, 0, cameraVec.z);
         Vector3 meVecXZ = new Vector3(meVec.x, 0, meVec.z);
 
-        return Vector3.Angle(meVecXZ, cameraVecXZ);
+        // http://answers.unity3d.com/questions/181867/is-there-way-to-find-a-negative-angle.html
+        float angle = Vector3.Angle(meVecXZ, cameraVecXZ);
+        Vector3 cross = Vector3.Cross(meVecXZ, cameraVecXZ);
+        if (cross.y < 0) angle = -angle;
+        return angle;
+
+//      return Vector3.Angle(meVecXZ, cameraVecXZ);
     }
 
     private void OnEnable() {
@@ -54,11 +60,12 @@ public class BillBoardExt : MonoBehaviour {
         // 初期角度を保つようにピボット対象の周りを回転する。
         {
             var angle = calcPivotObjectAngle();
+            //Debug.LogFormat("{0} : {1}", transform.name, PivotObjectAngle - angle);
 
             transform.RotateAround(
                 PivotObject.transform.position,
                 Vector3.up,
-                PivotObjectAngle - angle);
+                angle - PivotObjectAngle);
         }
 
         // 通常ビルボードの実装部分

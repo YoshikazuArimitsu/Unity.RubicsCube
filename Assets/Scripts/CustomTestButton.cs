@@ -155,6 +155,7 @@ public class CustomTestButton : MonoBehaviour, IInputClickHandler, IFocusable {
     }
 
     public void OnInputClicked(InputClickedEventData eventData) {
+        Debug.LogFormat("OnInputClicked : {0}", transform.name);
         if (!EnableActivation) {
             return;
         }
