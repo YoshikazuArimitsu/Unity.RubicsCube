@@ -525,9 +525,39 @@ PlayerSettings:
   metroApplicationDescription: HoloRubiks
   wsaImages:
     65636: Assets/UWP/StoreLogo.png
+    65661: Assets/UWP/StoreLogo.scale-125.png
+    65686: Assets/UWP/StoreLogo.scale-150.png
+    65736: Assets/UWP/StoreLogo.scale-200.png
+    65936: Assets/UWP/StoreLogo.scale-400.png
+    852016: 
+    2031632: Assets/UWP/Square44x44Logo.targetsize-16.png
+    2031640: Assets/UWP/Square44x44Logo.targetsize-24.png
+    2031664: Assets/UWP/Square44x44Logo.targetsize-48.png
+    2031716: Assets/UWP/Square44x44Logo.scale-100.png
+    2031741: Assets/UWP/Square44x44Logo.scale-125.png
+    2031766: Assets/UWP/Square44x44Logo.scale-150.png
     2031816: Assets/UWP/Square44x44Logo.scale-200.png
+    2031872: Assets/UWP/Square44x44Logo.targetsize-256.png
+    2032016: Assets/UWP/Square44x44Logo.scale-400.png
+    2097252: Assets/UWP/Square71x71Logo.scale-100.png
+    2097277: Assets/UWP/Square71x71Logo.scale-125.png
+    2097302: Assets/UWP/Square71x71Logo.scale-150.png
+    2097352: Assets/UWP/Square71x71Logo.scale-200.png
+    2097552: Assets/UWP/Square71x71Logo.scale-400.png
+    2162788: Assets/UWP/Square150x150Logo.scale-100.png
+    2162813: Assets/UWP/Square150x150Logo.scale-125.png
+    2162838: Assets/UWP/Square150x150Logo.scale-150.png
     2162888: Assets/UWP/Square150x150Logo.scale-200.png
+    2163088: Assets/UWP/Square150x150Logo.scale-400.png
+    2228324: Assets/UWP/Square310x310Logo.scale-100.png
+    2228349: Assets/UWP/Square310x310Logo.scale-125.png
+    2228374: Assets/UWP/Square310x310Logo.scale-150.png
+    2228424: Assets/UWP/Square310x310Logo.scale-200.png
+    2293860: Assets/UWP/Wide310x150Logo.scale-100.png
+    2293885: Assets/UWP/Wide310x150Logo.scale-125.png
+    2293910: Assets/UWP/Wide310x150Logo.scale-150.png
     2293960: Assets/UWP/Wide310x150Logo.scale-200.png
+    2294160: Assets/UWP/Wide310x150Logo.scale-400.png
   metroTileShortName: HoloRubiks
   metroCommandLineArgsFile: 
   metroTileShowName: 0
