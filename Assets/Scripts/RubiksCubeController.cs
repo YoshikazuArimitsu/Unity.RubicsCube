@@ -19,8 +19,8 @@ class RotatePattern {
 public class RubiksCubeController : MonoBehaviour {
 	// Unity Properties
 	public AudioClip RotateAudio;
-	public AudioClip ClearAudio;
 	public float RotateSpeed = 3.0f;
+    public bool ControleEnabled = true;
 
     // 中心ピース
 	private Transform Core_;
@@ -71,6 +71,11 @@ public class RubiksCubeController : MonoBehaviour {
     private bool IsReversing_ = false;
     public delegate void ReverseCompleteDelegate();
     public event ReverseCompleteDelegate ReverseCompleted;
+
+    // クリア
+    public delegate void ClearDelegate();
+    public event ClearDelegate Cleared;
+
 
     // Use this for initialization
     void Start () {
@@ -302,13 +307,10 @@ public class RubiksCubeController : MonoBehaviour {
 			}
 		}
 
-		Debug.Log ("Cleared!!!!!");
-		if (ClearAudio != null) {
-            // テーレッテレー
-			var audioSource = gameObject.GetComponent<AudioSource> ();
-			audioSource.clip = ClearAudio;
-			audioSource.Play ();
-		}
+		//Debug.Log ("Cleared!!!!!");
+        if(Cleared != null) {
+            Cleared();
+        }
 	}
 
     /// <summary>
@@ -319,6 +321,11 @@ public class RubiksCubeController : MonoBehaviour {
     /// <param name="filterZ"></param>
     /// <param name="direction"></param>
 	private void FireRotate(int filterX, int filterY, int filterZ, bool direction) {
+        if(ControleEnabled == false) {
+            // 操作不可状態
+            return;
+        }
+
 		RotateTransforms_ = FilterPieces(filterX, filterY, filterZ);
 		RotateCenter_ = LookupRotateCenter (RotateTransforms_);
 		RotateAxis_ = CalcRotateAxis (RotateTransforms_);
@@ -378,6 +385,11 @@ public class RubiksCubeController : MonoBehaviour {
     /// シャッフル開始
     /// </summary>
     public void FireShuffle() {
+        if (ControleEnabled == false) {
+            // 操作不可状態
+            return;
+        }
+
         ShuffleCount_ = 200;
     }
 
@@ -385,6 +397,11 @@ public class RubiksCubeController : MonoBehaviour {
     /// 反転開始
     /// </summary>
     public void FireReverse() {
+        if (ControleEnabled == false) {
+            // 操作不可状態
+            return;
+        }
+
         IsReversing_ = true;
         TotalRotateReverse_ = 0.0f;
     }

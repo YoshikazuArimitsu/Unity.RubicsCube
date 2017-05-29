@@ -1,11 +1,15 @@
-﻿using System.Collections;
+﻿using HoloToolkit.Unity.InputModule;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
-public class GameManager : MonoBehaviour {
+public class GameManager : MonoBehaviour, IInputClickHandler {
     public Transform RubiksCube;
     public Transform HandDraggableMarker;
     public Transform Teretteree;
+    public Transform ShuffleButton;
+    public Transform ReverseButton;
     private bool firstUpdated_ = false;
 
     public enum GameState {
@@ -18,6 +22,15 @@ public class GameManager : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
         GameState_ = GameState.Play;
+
+        RubiksCube.GetComponent<RubiksCubeController>().Cleared += GameManager_Cleared;
+    }
+
+    private void GameManager_Cleared() {
+        GameState_ = GameState.Terettere;
+        UpdateControlls();
+
+        InputManager.Instance.AddGlobalListener(gameObject);
     }
 
     // Update is called once per frame
@@ -31,13 +44,29 @@ public class GameManager : MonoBehaviour {
     private void UpdateControlls() {
         switch(GameState_) {
             case GameState.Play:
+                // 各コントローラを操作可能に
+                RubiksCube.GetComponent<RubiksCubeController>().ControleEnabled = true;
                 HandDraggableMarker.GetComponent<HandDraggableMarker>().IsDraggingEnabled = true;
                 Teretteree.GetComponent<GameClearController>().SetEnable(false);
+                ShuffleButton.GetComponent<CustomTestButton>().EnableActivation = true;
+                ReverseButton.GetComponent<CustomTestButton>().EnableActivation = true;
                 break;
+
             case GameState.Terettere:
-                HandDraggableMarker.GetComponent<HandDraggableMarker>().IsDraggingEnabled = true;
-                Teretteree.GetComponent<GameClearController>().SetEnable(false);
+                // 各コントローラを操作不可能に
+                RubiksCube.GetComponent<RubiksCubeController>().ControleEnabled = false;
+                HandDraggableMarker.GetComponent<HandDraggableMarker>().IsDraggingEnabled = false;
+                Teretteree.GetComponent<GameClearController>().SetEnable(true);
+                ShuffleButton.GetComponent<CustomTestButton>().EnableActivation = false;
+                ReverseButton.GetComponent<CustomTestButton>().EnableActivation = false;
                 break;
         }
+    }
+
+    public void OnInputClicked(InputClickedEventData eventData) {
+        GameState_ = GameState.Play;
+        UpdateControlls();
+
+        InputManager.Instance.RemoveGlobalListener(gameObject);
     }
 }

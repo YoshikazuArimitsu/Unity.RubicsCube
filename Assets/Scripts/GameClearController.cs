@@ -4,9 +4,11 @@ using UnityEngine;
 using UnityStandardAssets.ImageEffects;
 
 public class GameClearController : MonoBehaviour {
+    public AudioClip ClearAudio;
     private bool Enabled_;
     private Transform Background_;
     private Transform[] Bars_;
+
 	// Use this for initialization
 	void Start () {
         Background_ = transform.Find("BackGround");
@@ -24,10 +26,19 @@ public class GameClearController : MonoBehaviour {
 	}
 
     public void SetEnable(bool enable) {
+        if(Enabled_ == false && enable == true) {
+            if(ClearAudio != null) {
+                // テーレッテレー
+                var audioSource = gameObject.GetComponent<AudioSource>();
+                audioSource.clip = ClearAudio;
+                audioSource.Play();
+            }
+        }
+
         Enabled_ = enable;
 
         // カメラBloom
-        if(Enabled_) {
+        if (Enabled_) {
             Camera.main.GetComponent<Bloom>().bloomIntensity = 10;
         } else {
             Camera.main.GetComponent<Bloom>().bloomIntensity = 0;
