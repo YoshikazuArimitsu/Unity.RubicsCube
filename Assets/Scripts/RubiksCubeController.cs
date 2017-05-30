@@ -14,6 +14,7 @@ class RotatePattern {
         FilterZ = filterZ;
         Direction = direction;
     }
+
 }
 
 public class RubiksCubeController : MonoBehaviour {
@@ -29,23 +30,32 @@ public class RubiksCubeController : MonoBehaviour {
 
     // 回転パターン
     private RotatePattern[] RotatePatterns_ = new RotatePattern[] {
-        new RotatePattern(0, -1, -1, true),
+        // 左面
+        new RotatePattern(0, -1, -1, true ),
         new RotatePattern(0, -1, -1, false),
-		new RotatePattern(1, -1, -1, true),
+        // 中(LR)面
+		new RotatePattern(1, -1, -1, true ),
 		new RotatePattern(1, -1, -1, false),
-        new RotatePattern(2, -1, -1, true),
+        // 右面
+        new RotatePattern(2, -1, -1, true ),
         new RotatePattern(2, -1, -1, false),
-        new RotatePattern(-1, 0, -1, true),
+        // 下面
+        new RotatePattern(-1, 0, -1, true ),
         new RotatePattern(-1, 0, -1, false),
-		new RotatePattern(-1, 1, -1, true),
+        // 中(UD)面
+		new RotatePattern(-1, 1, -1, true ),
 		new RotatePattern(-1, 1, -1, false),
-        new RotatePattern(-1, 2, -1, true),
+        // 上面
+        new RotatePattern(-1, 2, -1, true ),
         new RotatePattern(-1, 2, -1, false),
-        new RotatePattern(-1, -1, 0, true),
+        // 前面
+        new RotatePattern(-1, -1, 0, true ),
         new RotatePattern(-1, -1, 0, false),
-		new RotatePattern(-1, -1, 1, true),
+        // 中(前後)
+		new RotatePattern(-1, -1, 1, true ),
 		new RotatePattern(-1, -1, 1, false),
-        new RotatePattern(-1, -1, 2, true),
+        // 後面
+        new RotatePattern(-1, -1, 2, true ),
         new RotatePattern(-1, -1, 2, false),
     };
 
@@ -68,6 +78,7 @@ public class RubiksCubeController : MonoBehaviour {
     public event ShuffleCompleteDelegate ShuffleCompleted;
 
     // 反転
+    private bool IsReversed_ = false;
     private bool IsReversing_ = false;
     public delegate void ReverseCompleteDelegate();
     public event ReverseCompleteDelegate ReverseCompleted;
@@ -202,11 +213,11 @@ public class RubiksCubeController : MonoBehaviour {
 			return center.transform.position - Core_.transform.position;
 		}
 
-		// 中心を含む場合、transforms に含まれない 回転面中央キューブ(2) のうち大きいものへのベクトルを取る
+		// 中心を含む場合、transforms に含まれない 回転面中央キューブ(2) のうち小さいものからのベクトルを取る
 		Transform[] targets = new Transform[] {
-			Pieces_ [2, 1, 1],
-			Pieces_ [1, 2, 1],
-			Pieces_ [1, 1, 2]
+			Pieces_ [0, 1, 1],
+			Pieces_ [1, 0, 1],
+			Pieces_ [1, 1, 0]
 		};
 
 		foreach (var target in targets) {
@@ -406,11 +417,69 @@ public class RubiksCubeController : MonoBehaviour {
         TotalRotateReverse_ = 0.0f;
     }
 
+    private void FireRotateByKeyboard() {
+        // 回転面の特定
+        int x = -1, y = -1, z = -1;
+
+        if(!IsReversed_) {
+            // 通常時  x / y / z
+            // L/M/R/D/E/U/F/S/B面
+            x = Input.GetKey(KeyCode.L) ? 0 : x;
+            x = Input.GetKey(KeyCode.M) ? 1 : x;
+            x = Input.GetKey(KeyCode.R) ? 2 : x;
+            if (x == -1) {
+                y = Input.GetKey(KeyCode.D) ? 0 : y;
+                y = Input.GetKey(KeyCode.E) ? 1 : y;
+                y = Input.GetKey(KeyCode.U) ? 2 : y;
+            }
+            if (x == -1 && y == -1) {
+                z = Input.GetKey(KeyCode.F) ? 0 : z;
+                z = Input.GetKey(KeyCode.S) ? 1 : z;
+                z = Input.GetKey(KeyCode.B) ? 2 : z;
+            }
+        } else {
+            // 反転時 -x / z / y  の形になっている
+            // L/M/R/D/E/U/F/S/B面
+            x = Input.GetKey(KeyCode.L) ? 2 : x;
+            x = Input.GetKey(KeyCode.M) ? 1 : x;
+            x = Input.GetKey(KeyCode.R) ? 0 : x;
+            if (x == -1) {
+                z = Input.GetKey(KeyCode.D) ? 0 : z;
+                z = Input.GetKey(KeyCode.E) ? 1 : z;
+                z = Input.GetKey(KeyCode.U) ? 2 : z;
+            }
+            if (x == -1 && z == -1) {
+                y = Input.GetKey(KeyCode.F) ? 0 : y;
+                y = Input.GetKey(KeyCode.S) ? 1 : y;
+                y = Input.GetKey(KeyCode.B) ? 2 : y;
+            }
+        }
+
+        if (x == -1 && y == -1 && z == -1) {
+            return;
+        }
+
+        bool direction = true;
+
+        // 反転時のM平面は逆回転
+        if(IsReversed_ && x == 1) {
+            direction = !direction;
+        }
+
+        // Shiftが押されていると更に逆回転
+        if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) {
+            direction = !direction;
+        }
+
+        FireRotate(x, y, z, direction);
+    }
+
     // Update is called once per frame
     void Update () {
         // 回転トリガー
         if (!IsRotation_) {
-			// キーボード回転機能 0〜9,A〜H
+            // キーボード回転機能 0〜9,A〜H
+            /*
             KeyCode[] keyCodes = new KeyCode[] {
                 KeyCode.Alpha0,
                 KeyCode.Alpha1,
@@ -439,15 +508,20 @@ public class RubiksCubeController : MonoBehaviour {
                     break;
                 }
             }
+            */
+            // 新・キーボード回転
+            FireRotateByKeyboard();
 
 			// 反転
-			if (Input.GetKey (KeyCode.R)) {
+			if (Input.GetKey (KeyCode.Z)) {
                 FireReverse();
+                return;
 			}
 
 			// シャッフル
-			if (Input.GetKey (KeyCode.S)) {
+			if (Input.GetKey (KeyCode.X)) {
                 FireShuffle();
+                return;
 			}
         }
 
@@ -527,6 +601,7 @@ public class RubiksCubeController : MonoBehaviour {
                 // 反転完了
                 //Debug.Log ("reverse complete.");
                 IsReversing_ = false;
+                IsReversed_ = !IsReversed_;
 
                 if (ReverseCompleted != null) {
                     ReverseCompleted();
