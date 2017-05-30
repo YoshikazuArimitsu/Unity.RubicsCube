@@ -21,7 +21,16 @@ public class RubiksCubeController : MonoBehaviour {
 	// Unity Properties
 	public AudioClip RotateAudio;
 	public float RotateSpeed = 3.0f;
-    public bool ControlEnabled = true;
+
+    private bool ControlEnable_ = true;
+
+    public void SetEnable(bool enable) {
+        ControlEnable_ = enable;
+
+        foreach (var s in AllSurfaceControllers()) {
+            s.SetEnable(enable);
+        }
+    }
 
     // 中心ピース
 	private Transform Core_;
@@ -287,20 +296,27 @@ public class RubiksCubeController : MonoBehaviour {
 		UpdateInsidePieces ();
     }
 
+    public static List<SurfaceController> AllSurfaceControllers() {
+        var list = new List<SurfaceController>();
+        var surfaces = GameObject.FindGameObjectsWithTag("Surface Cube");
+
+        foreach (var s in surfaces) {
+            var pc = s.GetComponent<SurfaceController>();
+            if (pc != null) {
+                list.Add(pc);
+            }
+        }
+        return list;
+    }
+
     /// <summary>
     /// 全SurfaceのInsidePiece更新
     /// </summary>
 	private void UpdateInsidePieces() {
-		var surfaces = GameObject.FindGameObjectsWithTag ("Surface Cube");
-		//Debug.LogFormat ("updateInsideCubes: surfaces={0}", surfaces.Length);
-
-		foreach (var s in surfaces) {
-			var pc = s.GetComponent<SurfaceController> ();
-			if (pc != null) {
-				pc.UpdateInsideCube ();
-			}
-		}
-	}
+        foreach (var s in AllSurfaceControllers()) {
+            s.UpdateInsideCube();
+        }
+    }
 
     /// <summary>
     /// クリアしたかチェック
@@ -308,15 +324,12 @@ public class RubiksCubeController : MonoBehaviour {
 	private void CheckClear() {
 		var surfaces = GameObject.FindGameObjectsWithTag ("Surface Cube");
 
-		// 全表面の奥キューブが初期状態のものと一致すればクリア
-		foreach (var s in surfaces) {
-			var pc = s.GetComponent<SurfaceController> ();
-			if (pc != null) {
-				if (!pc.HasInitInside ()) {
-					return;
-				}
-			}
-		}
+        // 全表面の奥キューブが初期状態のものと一致すればクリア
+        foreach (var s in AllSurfaceControllers()) {
+            if (!s.HasInitInside()) {
+                return;
+            }
+        }
 
 		//Debug.Log ("Cleared!!!!!");
         if(Cleared != null) {
@@ -332,7 +345,7 @@ public class RubiksCubeController : MonoBehaviour {
     /// <param name="filterZ"></param>
     /// <param name="direction"></param>
 	private void FireRotate(int filterX, int filterY, int filterZ, bool direction) {
-        if(ControlEnabled == false) {
+        if(ControlEnable_ == false) {
             // 操作不可状態
             return;
         }
@@ -396,7 +409,7 @@ public class RubiksCubeController : MonoBehaviour {
     /// シャッフル開始
     /// </summary>
     public void FireShuffle() {
-        if (ControlEnabled == false) {
+        if (ControlEnable_ == false) {
             // 操作不可状態
             return;
         }
@@ -408,7 +421,7 @@ public class RubiksCubeController : MonoBehaviour {
     /// 反転開始
     /// </summary>
     public void FireReverse() {
-        if (ControlEnabled == false) {
+        if (ControlEnable_ == false) {
             // 操作不可状態
             return;
         }

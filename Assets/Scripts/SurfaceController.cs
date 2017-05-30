@@ -4,10 +4,17 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
-public class SurfaceController : MonoBehaviour {
+public class SurfaceController : MonoBehaviour, IInputClickHandler {
     private bool Selected_ = false;
     public Material Material;
     public Material SelectedMaterial;
+
+    private bool ControlEnable_ = true;
+
+    public void SetEnable(bool enable) {
+        ControlEnable_ = enable;
+    }
+
 
     /// <summary>
     /// この面が属するピース
@@ -99,10 +106,25 @@ public class SurfaceController : MonoBehaviour {
 	}
 
     public void InputDown() {
+        if (!ControlEnable_) {
+            return;
+        }
+
         RubiksCubeController_.OnDragStart(this, BasePiece_, InsidePiece_);
     }
 
     public void InputOver() {
+        if (!ControlEnable_) {
+            return;
+        }
+
         RubiksCubeController_.OnDragOver(this, BasePiece_, InsidePiece_);
+    }
+
+    public void OnInputClicked(InputClickedEventData eventData) {
+        if(!ControlEnable_) {
+            return;
+        }
+        Debug.LogFormat("InputClick");
     }
 }

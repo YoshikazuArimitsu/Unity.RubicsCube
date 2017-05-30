@@ -47,7 +47,7 @@ public class GameManager : MonoBehaviour, IInputClickHandler {
         switch(GameState_) {
             case GameState.Play:
                 // 各コントローラを操作可能に
-                RubiksCube.GetComponent<RubiksCubeController>().ControlEnabled = true;
+                RubiksCube.GetComponent<RubiksCubeController>().SetEnable(true);
                 HandDraggableMarker.GetComponent<HandDraggableMarker>().IsDraggingEnabled = true;
                 ShuffleButton.GetComponent<CustomTestButton>().EnableActivation = true;
                 ReverseButton.GetComponent<CustomTestButton>().EnableActivation = true;
@@ -66,7 +66,7 @@ public class GameManager : MonoBehaviour, IInputClickHandler {
 
             case GameState.Adjusting:
                 // 各コントローラを操作不可能に
-                RubiksCube.GetComponent<RubiksCubeController>().ControlEnabled = false;
+                RubiksCube.GetComponent<RubiksCubeController>().SetEnable(false);
                 HandDraggableMarker.GetComponent<HandDraggableMarker>().IsDraggingEnabled = false;
 
                 // シャッフル・回転ボタンを隠す
@@ -82,7 +82,7 @@ public class GameManager : MonoBehaviour, IInputClickHandler {
 
             case GameState.Terettere:
                 // 各コントローラを操作不可能に
-                RubiksCube.GetComponent<RubiksCubeController>().ControlEnabled = false;
+                RubiksCube.GetComponent<RubiksCubeController>().SetEnable(false);
                 HandDraggableMarker.GetComponent<HandDraggableMarker>().IsDraggingEnabled = false;
                 ShuffleButton.GetComponent<CustomTestButton>().EnableActivation = false;
                 ReverseButton.GetComponent<CustomTestButton>().EnableActivation = false;
