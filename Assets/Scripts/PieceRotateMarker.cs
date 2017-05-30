@@ -25,4 +25,12 @@ public class PieceRotateMarker : Singleton<PieceRotateMarker> {
         }
         Enable_ = enable;
     }
+
+    public void UpdateTransform(SurfaceController select) {
+        if(select != null) {
+            SetEnable(true);
+        } else {
+            SetEnable(false);
+        }
+    }
 }

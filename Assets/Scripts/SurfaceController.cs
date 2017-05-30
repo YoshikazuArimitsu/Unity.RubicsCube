@@ -125,6 +125,7 @@ public class SurfaceController : MonoBehaviour, IInputClickHandler {
         if(!ControlEnable_) {
             return;
         }
-        Debug.LogFormat("InputClick");
+
+        RubiksCubeController_.OnClickSurface(this, BasePiece_, InsidePiece_);
     }
 }

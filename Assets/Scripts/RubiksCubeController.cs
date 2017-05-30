@@ -72,6 +72,10 @@ public class RubiksCubeController : MonoBehaviour {
 	private Transform DragOrigin_;
 	private Transform DragOriginInside_;
 
+    // 選択中ピース面
+    private PieceRotateMarker PiiceRotateMarker_;
+    private Transform ClickOrigin_;
+
     // 回転状態パラメータ
     private bool IsRotation_ = false;       // 回転フラグ
     private float TotalRotate_ = 0.0f;      // トータル回転角
@@ -99,7 +103,10 @@ public class RubiksCubeController : MonoBehaviour {
 
     // Use this for initialization
     void Start () {
-		RebuildPieces();
+        PiiceRotateMarker_ = transform.Find("PieceRotateMarker").GetComponent<PieceRotateMarker>();
+        UpdatePieceRotateMarker();
+
+        RebuildPieces();
 	}
 
     /// <summary>
@@ -322,8 +329,6 @@ public class RubiksCubeController : MonoBehaviour {
     /// クリアしたかチェック
     /// </summary>
 	private void CheckClear() {
-		var surfaces = GameObject.FindGameObjectsWithTag ("Surface Cube");
-
         // 全表面の奥キューブが初期状態のものと一致すればクリア
         foreach (var s in AllSurfaceControllers()) {
             if (!s.HasInitInside()) {
@@ -491,37 +496,6 @@ public class RubiksCubeController : MonoBehaviour {
     void Update () {
         // 回転トリガー
         if (!IsRotation_) {
-            // キーボード回転機能 0〜9,A〜H
-            /*
-            KeyCode[] keyCodes = new KeyCode[] {
-                KeyCode.Alpha0,
-                KeyCode.Alpha1,
-                KeyCode.Alpha2,
-                KeyCode.Alpha3,
-                KeyCode.Alpha4,
-                KeyCode.Alpha5,
-                KeyCode.Alpha6,
-                KeyCode.Alpha7,
-                KeyCode.Alpha8,
-                KeyCode.Alpha9,
-                KeyCode.A,
-                KeyCode.B,
-				KeyCode.C,
-				KeyCode.D,
-				KeyCode.E,
-				KeyCode.F,
-				KeyCode.G,
-				KeyCode.H
-            };
-
-            for(int i = 0; i < keyCodes.Length; ++i) {
-                if(Input.GetKey(keyCodes[i])) {
-                    var r = RotatePatterns_[i];
-					FireRotate (r.FilterX, r.FilterY, r.FilterZ, r.Direction);
-                    break;
-                }
-            }
-            */
             // 新・キーボード回転
             FireRotateByKeyboard();
 
@@ -710,6 +684,20 @@ public class RubiksCubeController : MonoBehaviour {
 
         // 回転中は選択面を暗くしておきたいのでここではキャンセルしない。
         // this.OnDragCancel();
+    }
+
+    public void OnClickSurface(SurfaceController surface, Transform drag, Transform inside) {
+        ClickOrigin_ = surface.GetComponent<Transform>();
+    }
+
+    private void UpdatePieceRotateMarker() {
+        if(ControlEnable_ == true &&
+           ClickOrigin_ != null &&
+           DragOrigin_ == null) {
+            PiiceRotateMarker_.UpdateTransform(ClickOrigin_.GetComponent<SurfaceController>());
+        } else {
+            PiiceRotateMarker_.UpdateTransform(null);
+        }
     }
 
     /// <summary>
