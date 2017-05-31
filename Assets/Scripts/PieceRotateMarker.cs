@@ -29,6 +29,11 @@ public class PieceRotateMarker : Singleton<PieceRotateMarker> {
     public void UpdateTransform(SurfaceController select) {
         if(select != null) {
             SetEnable(true);
+
+            // 位置更新
+            Debug.LogFormat("SurfaceLoc : {0}", select.transform.position);
+            transform.eulerAngles = select.transform.eulerAngles;
+            transform.position = select.transform.position;
         } else {
             SetEnable(false);
         }

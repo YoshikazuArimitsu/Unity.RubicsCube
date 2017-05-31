@@ -59,6 +59,14 @@ public class SurfaceController : MonoBehaviour, IInputClickHandler {
         Selected_ = selected;
     }
 
+    /// <summary>
+    /// この面の外側向き法線ベクトル
+    /// </summary>
+    /// <returns></returns>
+    public Vector3 GetVerticalVector() {
+        return (transform.position - BasePiece_.transform.position).normalized;
+    }
+
 	public void UpdateInsideCube() {
         if(BasePiece_ == null) {
             return;
