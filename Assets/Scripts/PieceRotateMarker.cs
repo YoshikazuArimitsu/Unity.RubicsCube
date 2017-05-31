@@ -33,7 +33,7 @@ public class PieceRotateMarker : Singleton<PieceRotateMarker> {
             // 位置更新
             Debug.LogFormat("SurfaceLoc : {0}", select.transform.position);
             transform.eulerAngles = select.transform.eulerAngles;
-            transform.position = select.transform.position;
+            transform.position = select.transform.position + select.GetVerticalVector() * 0.02f;
         } else {
             SetEnable(false);
         }
