@@ -721,7 +721,9 @@ public class RubiksCubeController : MonoBehaviour {
         }
 
         // 既にドラッグ・選択中なら無視
-        if (ManipulateMode_ != ManipulateMode.None) {
+        //if (ManipulateMode_ != ManipulateMode.None) {
+        // ドラッグ中なら無視(とりあえず)
+        if(ManipulateMode_ == ManipulateMode.PieceDrag) { 
             return;
         }
 
