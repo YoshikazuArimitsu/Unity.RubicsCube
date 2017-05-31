@@ -14,7 +14,6 @@ class RotatePattern {
         FilterZ = filterZ;
         Direction = direction;
     }
-
 }
 
 public class RubiksCubeController : MonoBehaviour {
@@ -67,6 +66,14 @@ public class RubiksCubeController : MonoBehaviour {
         new RotatePattern(-1, -1, 2, true ),
         new RotatePattern(-1, -1, 2, false),
     };
+
+    public enum ManipulateMode {
+        None,
+        PieceDrag,
+        PieceClick
+    };
+
+    private ManipulateMode ManipulateMode_ = ManipulateMode.None;
 
 	// ドラッグ起点&内側ピース
 	private Transform DragOrigin_;
@@ -539,8 +546,8 @@ public class RubiksCubeController : MonoBehaviour {
                 //Debug.Log("rotate complete.");
                 IsRotation_ = false;
 
-                // 面選択解除
-                this.OnDragCancel();
+                // 操作/選択解除
+                UpdateManipulateMode(ManipulateMode.None);
 
                 // キューブ情報組み直し
                 RebuildPieces();
@@ -595,38 +602,43 @@ public class RubiksCubeController : MonoBehaviour {
                 }
             }
         }
-
     }
 
-    /// <summary>
-    /// ドラッグによる回転の発生を許可するか
-    /// </summary>
-    /// <returns></returns>
-    public bool IsEnablePieceDrag() {
-        // 回転中なら拒否
-        if(IsRotation_) {
-            return false;
+    private void UpdateManipulateMode(ManipulateMode m) {
+        Debug.LogFormat("UpdateManipulateMode : {0}", m.ToString());
+        switch(m) {
+            case ManipulateMode.None:
+                DragOrigin_ = null;
+                DragOriginInside_ = null;
+                foreach (var s in AllSurfaceControllers()) {
+                    s.Select(false);
+                }
+                break;
+            case ManipulateMode.PieceDrag:
+            case ManipulateMode.PieceClick:
+            default:
+                break;
         }
-        return true;
+
+        ManipulateMode_ = m;
+        UpdatePieceRotateMarker();
+
     }
 
     /// <summary>
     /// ドラッグキャンセル
     /// </summary>
     public void OnDragCancel() {
+        if(ManipulateMode_ != ManipulateMode.PieceDrag) {
+            return;
+        }
+
+        // 回転中は無視(回転完了後に自動で戻る)
         if(IsRotation_) {
             return;
         }
-		DragOrigin_ = null;
-		DragOriginInside_ = null;
 
-        var surfaces = GameObject.FindGameObjectsWithTag("Surface Cube");
-        foreach (var s in surfaces) {
-            var pc = s.GetComponent<SurfaceController>();
-            if (pc != null) {
-                pc.Select(false);
-            }
-        }
+        UpdateManipulateMode(ManipulateMode.None);
     }
 
     /// <summary>
@@ -635,11 +647,21 @@ public class RubiksCubeController : MonoBehaviour {
     /// <param name="drag"></param>
     /// <param name="inside"></param>
 	public void OnDragStart(SurfaceController surface, Transform drag, Transform inside) {
+        // 回転中は無視
+        if(IsRotation_) {
+            return;
+        }
+
+        // 既にドラッグ・選択中なら無視
+        if(ManipulateMode_ != ManipulateMode.None) {
+            return;
+        }
+
 		DragOrigin_ = drag;
 		DragOriginInside_ = inside;
-
         surface.Select(true);
 
+        UpdateManipulateMode(ManipulateMode.PieceDrag);
         //Debug.LogFormat("OnDragStart : Cubes=[{0}, {1}]",
         //	DragOrigin_.name, DragOriginInside_.name);
     }
@@ -650,13 +672,19 @@ public class RubiksCubeController : MonoBehaviour {
     /// <param name="drag"></param>
     /// <param name="inside"></param>
 	public void OnDragOver(SurfaceController surface, Transform drag, Transform inside) {
-        // 無効
-		if(DragOrigin_ == null || !IsEnablePieceDrag()) { 
+        // ドラッグモード中でなければ無視
+		//if(DragOrigin_ != null || IsRotation_) { 
+        if(ManipulateMode_ != ManipulateMode.PieceDrag) { 
             return;
         }
 
-		// 無変更
-		if (DragOrigin_ == drag) {
+        // 回転中は無視
+        if (IsRotation_) {
+            return;
+        }
+
+        // 無変更
+        if (DragOrigin_ == drag) {
 			return;
 		}
 
@@ -687,15 +715,27 @@ public class RubiksCubeController : MonoBehaviour {
     }
 
     public void OnClickSurface(SurfaceController surface, Transform drag, Transform inside) {
+        // 回転中は無視
+        if (IsRotation_) {
+            return;
+        }
+
+        // 既にドラッグ・選択中なら無視
+        if (ManipulateMode_ != ManipulateMode.None) {
+            return;
+        }
+
+        // クリック面設定
         ClickOrigin_ = surface.GetComponent<Transform>();
+        surface.Select(true);
+        UpdateManipulateMode(ManipulateMode.PieceClick);
     }
 
     private void UpdatePieceRotateMarker() {
-        if(ControlEnable_ == true &&
-           ClickOrigin_ != null &&
-           DragOrigin_ == null) {
+        // クリック選択モード
+        if(ManipulateMode_ == ManipulateMode.PieceClick) {
             PiiceRotateMarker_.UpdateTransform(ClickOrigin_.GetComponent<SurfaceController>());
-        } else {
+        } else { 
             PiiceRotateMarker_.UpdateTransform(null);
         }
     }
